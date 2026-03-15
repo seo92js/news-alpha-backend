@@ -18,6 +18,7 @@ bin/
 *.iml
 *.ipr
 out/
+ㅅ
 !**/src/main/resources/hibernate.cfg.xml
 
 ### NetBeans ###
@@ -37,3 +38,6 @@ out/
 *.swp
 *~
 .DS_Store
+
+### Secrets ###
+application-secret.yml

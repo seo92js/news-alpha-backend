@@ -1,3 +1,5 @@
 spring:
   application:
     name: news-alpha-backend
+  config:
+    import: optional:classpath:application-secret.yml
