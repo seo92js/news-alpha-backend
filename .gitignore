@@ -41,3 +41,5 @@ out/
 
 ### Secrets ###
 application-secret.yml
+**/.env*
+!**/.env*.template
