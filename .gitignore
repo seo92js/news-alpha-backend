@@ -37,3 +37,6 @@ out/
 *.swp
 *~
 .DS_Store
+
+**/.env*
+!**/.env*.template
