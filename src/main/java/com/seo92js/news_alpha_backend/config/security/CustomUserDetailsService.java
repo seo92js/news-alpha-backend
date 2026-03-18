@@ -1,7 +1,7 @@
-package com.seo92js.news_alpha_backend.security;
+package com.seo92js.news_alpha_backend.config.security;
 
-import com.seo92js.news_alpha_backend.entity.Member;
-import com.seo92js.news_alpha_backend.repository.MemberRepository;
+import com.seo92js.news_alpha_backend.domain.member.Member;
+import com.seo92js.news_alpha_backend.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;

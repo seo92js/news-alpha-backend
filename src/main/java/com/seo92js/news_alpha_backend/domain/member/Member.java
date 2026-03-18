@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.entity;
+package com.seo92js.news_alpha_backend.domain.member;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

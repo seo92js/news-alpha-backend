@@ -1,6 +1,6 @@
-package com.seo92js.news_alpha_backend.config;
+package com.seo92js.news_alpha_backend.config.security;
 
-import com.seo92js.news_alpha_backend.jwt.JwtAuthenticationFilter;
+import com.seo92js.news_alpha_backend.config.security.jwt.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
