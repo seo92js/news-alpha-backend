@@ -37,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtTokenProvider.getEmailFromToken(token);
             String roles = jwtTokenProvider.getRolesFromToken(token);
 
-            List<SimpleGrantedAuthority> authorities = Arrays.stream(roles.split(","))
+            List<SimpleGrantedAuthority> authorities = Arrays.stream(roles.split(AppConstants.COMMA))
                     .map(SimpleGrantedAuthority::new)
                     .toList();
 
