@@ -1,11 +1,11 @@
-package com.seo92js.news_alpha_backend.service;
+package com.seo92js.news_alpha_backend.domain.ai.service;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
-import com.seo92js.news_alpha_backend.dto.*;
-import com.seo92js.news_alpha_backend.entity.Member;
-import com.seo92js.news_alpha_backend.entity.Role;
-import com.seo92js.news_alpha_backend.jwt.JwtTokenProvider;
-import com.seo92js.news_alpha_backend.repository.MemberRepository;
+import com.seo92js.news_alpha_backend.domain.member.Member;
+import com.seo92js.news_alpha_backend.domain.member.Role;
+import com.seo92js.news_alpha_backend.config.security.jwt.JwtTokenProvider;
+import com.seo92js.news_alpha_backend.domain.member.dto.*;
+import com.seo92js.news_alpha_backend.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

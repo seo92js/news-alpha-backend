@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.dto;
+package com.seo92js.news_alpha_backend.domain.member.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

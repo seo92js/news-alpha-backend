@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.jwt;
+package com.seo92js.news_alpha_backend.config.security.jwt;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
 import jakarta.servlet.FilterChain;

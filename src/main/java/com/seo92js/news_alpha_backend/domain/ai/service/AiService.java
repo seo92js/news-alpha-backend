@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.service;
+package com.seo92js.news_alpha_backend.domain.ai.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.chat.model.ChatModel;

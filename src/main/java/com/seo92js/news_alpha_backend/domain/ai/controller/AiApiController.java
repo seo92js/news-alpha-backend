@@ -1,6 +1,6 @@
-package com.seo92js.news_alpha_backend.controller;
+package com.seo92js.news_alpha_backend.domain.ai.controller;
 
-import com.seo92js.news_alpha_backend.service.AiService;
+import com.seo92js.news_alpha_backend.domain.ai.service.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

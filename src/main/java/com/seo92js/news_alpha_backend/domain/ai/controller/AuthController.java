@@ -1,17 +1,14 @@
-package com.seo92js.news_alpha_backend.controller;
+package com.seo92js.news_alpha_backend.domain.ai.controller;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
-import com.seo92js.news_alpha_backend.dto.*;
-import com.seo92js.news_alpha_backend.service.AuthService;
+import com.seo92js.news_alpha_backend.domain.member.dto.*;
+import com.seo92js.news_alpha_backend.domain.ai.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
