@@ -30,7 +30,7 @@ public class JwtTokenProvider {
     public String generateToken(Authentication authentication) {
         String authorities = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(AppConstants.COMMA));
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration);
