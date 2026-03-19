@@ -1,8 +1,8 @@
 package com.seo92js.news_alpha_backend.domain.ai.service;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
-import com.seo92js.news_alpha_backend.domain.ai.exception.DuplicateEmailException;
-import com.seo92js.news_alpha_backend.domain.ai.exception.MemberNotFoundException;
+import com.seo92js.news_alpha_backend.domain.member.exception.DuplicateEmailException;
+import com.seo92js.news_alpha_backend.domain.member.exception.MemberNotFoundException;
 import com.seo92js.news_alpha_backend.domain.member.Member;
 import com.seo92js.news_alpha_backend.domain.member.Role;
 import com.seo92js.news_alpha_backend.config.security.jwt.JwtTokenProvider;
