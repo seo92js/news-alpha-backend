@@ -1,6 +1,8 @@
 package com.seo92js.news_alpha_backend.domain.ai.service;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
+import com.seo92js.news_alpha_backend.domain.ai.exception.DuplicateEmailException;
+import com.seo92js.news_alpha_backend.domain.ai.exception.MemberNotFoundException;
 import com.seo92js.news_alpha_backend.domain.member.Member;
 import com.seo92js.news_alpha_backend.domain.member.Role;
 import com.seo92js.news_alpha_backend.config.security.jwt.JwtTokenProvider;
@@ -29,7 +31,7 @@ public class AuthService {
     public SignupResponse signup(SignupRequest request) {
 
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new DuplicateEmailException();
         }
 
         Member member = Member.builder()
@@ -66,7 +68,7 @@ public class AuthService {
 
     public MemberInfo getMyInfo(String email) {
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
+                .orElseThrow(MemberNotFoundException::new);
         return new MemberInfo(member.getEmail(), member.getRole());
     }
 }
