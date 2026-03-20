@@ -68,7 +68,7 @@ public class AuthService {
 
     public MemberInfo getMyInfo(String email) {
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(MemberNotFoundException::new);
+                .orElseThrow(() -> new MemberNotFoundException(email));
         return new MemberInfo(member.getEmail(), member.getRole());
     }
 }

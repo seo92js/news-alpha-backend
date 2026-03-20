@@ -1,9 +1,8 @@
 package com.seo92js.news_alpha_backend.common.handler;
 
-import com.seo92js.news_alpha_backend.dto.ErrorResponse;
-import com.seo92js.news_alpha_backend.domain.member.exception.DuplicateEmailException;
+import com.seo92js.news_alpha_backend.common.exception.BusinessException;
 import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
-import com.seo92js.news_alpha_backend.domain.member.exception.MemberNotFoundException;
+import com.seo92js.news_alpha_backend.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,19 +16,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ExceptionHandler(MemberNotFoundException.class)
-    public ErrorResponse handleMemberNotFound(MemberNotFoundException e) {
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(BusinessException.class)
+    public ErrorResponse handleBusiness(BusinessException e) {
 
-        log.warn("MemberNotFoundException : {}", e.getLogMessage());
-        return ErrorResponse.of(e.getErrorCode());
-    }
-
-    @ResponseStatus(HttpStatus.CONFLICT)
-    @ExceptionHandler(DuplicateEmailException.class)
-    public ErrorResponse handleDuplicateEmail(DuplicateEmailException e) {
-
-        log.warn("DuplicateEmailException : {}", e.getLogMessage());
+        log.warn("BusinessException : {}", e.getLogMessage());
         return ErrorResponse.of(e.getErrorCode());
     }
 

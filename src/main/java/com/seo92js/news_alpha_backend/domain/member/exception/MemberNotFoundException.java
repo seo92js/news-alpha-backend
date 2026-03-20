@@ -5,7 +5,7 @@ import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 
 public class MemberNotFoundException extends BusinessException {
 
-    public MemberNotFoundException() {
-        super(ErrorCode.MEMBER_NOT_FOUND);
+    public MemberNotFoundException(String email) {
+        super(ErrorCode.MEMBER_NOT_FOUND, email);
     }
 }
