@@ -1,7 +1,6 @@
 package com.seo92js.news_alpha_backend.domain.news;
 
 import com.seo92js.news_alpha_backend.domain.news.dto.NaverNewsResponse;
-
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -17,6 +16,9 @@ public class NaverNewsClient {
                 .build();
     }
 
+    /**
+     * 네이버 API 로 뉴스 조회
+     */
     public NaverNewsResponse fetch(String keyword, String clientId, String clientSecret) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder

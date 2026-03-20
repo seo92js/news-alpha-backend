@@ -26,8 +26,23 @@ public class News extends BaseEntity {
     private String link;
 
     @Column(columnDefinition = "TEXT")
-
     private String description;
 
+    @Column(columnDefinition = "TEXT")
+    private String content; // 기사 전문 (크롤링)
+
     private LocalDateTime pubDate;
+
+    public static News of(String keyword, String title, String originalLink, String link,
+                          String description, String content, LocalDateTime pubDate) {
+        News news = new News();
+        news.keyword = keyword;
+        news.title = title;
+        news.originalLink = originalLink;
+        news.link = link;
+        news.description = description;
+        news.content = content;
+        news.pubDate = pubDate;
+        return news;
+    }
 }

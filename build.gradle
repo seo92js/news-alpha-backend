@@ -60,6 +60,9 @@ dependencies {
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
+	// Jsoup
+	implementation 'org.jsoup:jsoup:1.18.1'
+
 	// devtools
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

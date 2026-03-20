@@ -23,6 +23,6 @@ class NewsServiceTest {
 
     @Test
     void fetchNews() {
-        newsService.fetchNews("비트");
+        newsService.fetchNews("비트코인");
     }
 }
