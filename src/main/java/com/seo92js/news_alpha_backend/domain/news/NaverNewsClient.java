@@ -1,6 +1,8 @@
 package com.seo92js.news_alpha_backend.domain.news;
 
 import com.seo92js.news_alpha_backend.domain.news.dto.NaverNewsResponse;
+
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -26,6 +28,9 @@ public class NaverNewsClient {
                 .header("X-Naver-Client-Id", clientId)
                 .header("X-Naver-Client-Secret", clientSecret)
                 .retrieve()
+                .onStatus(HttpStatusCode::isError, (request, response) -> {
+                    // TODO : 에러 throw 해주셈
+                })
                 .body(NaverNewsResponse.class);
     }
 }
