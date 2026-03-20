@@ -5,7 +5,7 @@ import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 
 public class DuplicateEmailException extends BusinessException {
 
-    public DuplicateEmailException() {
-        super(ErrorCode.DUPLICATE_EMAIL);
+    public DuplicateEmailException(String email) {
+        super(ErrorCode.DUPLICATE_EMAIL, email);
     }
 }

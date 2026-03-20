@@ -31,7 +31,7 @@ public class AuthService {
     public SignupResponse signup(SignupRequest request) {
 
         if (memberRepository.existsByEmail(request.getEmail())) {
-            throw new DuplicateEmailException();
+            throw new DuplicateEmailException(request.getEmail());
         }
 
         Member member = Member.builder()

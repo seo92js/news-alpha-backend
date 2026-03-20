@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MemberNotFoundException.class)
     public ErrorResponse handleMemberNotFound(MemberNotFoundException e) {
 
-        log.warn("MemberNotFoundException : {}", e.getMessage());
+        log.warn("MemberNotFoundException : {}", e.getLogMessage());
         return ErrorResponse.of(e.getErrorCode());
     }
 
@@ -29,7 +29,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateEmailException.class)
     public ErrorResponse handleDuplicateEmail(DuplicateEmailException e) {
 
-        log.warn("DuplicateEmailException : {}", e.getMessage());
+        log.warn("DuplicateEmailException : {}", e.getLogMessage());
         return ErrorResponse.of(e.getErrorCode());
     }
 
