@@ -19,3 +19,10 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: 6379
+
+naver:
+  news:
+    supported-domains:
+      - https://n.news.naver.com/
+      - https://sports.news.naver.com/
+      - https://entertain.naver.com/
