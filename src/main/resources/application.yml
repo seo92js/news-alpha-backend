@@ -26,3 +26,12 @@ naver:
       - https://n.news.naver.com/
       - https://sports.news.naver.com/
       - https://entertain.naver.com/
+
+custom:
+  access-log:
+    static-patterns:
+      - "/css/**"
+      - "/js/**"
+      - "/images/**"
+      - "/favicon.ico"
+      - "/error"
