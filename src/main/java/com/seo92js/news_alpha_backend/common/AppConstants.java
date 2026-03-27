@@ -6,7 +6,6 @@ public class AppConstants {
 
     public static final String SPACE = " ";
     public static final String COMMA = ",";
-    public static final String DOT = ".";
     public static final String LOG_DELIMETER = COMMA + SPACE; // ", "
 
     public static final class Jwt {
