@@ -2,7 +2,7 @@ package com.seo92js.news_alpha_backend.common.handler;
 
 import com.seo92js.news_alpha_backend.common.exception.BusinessException;
 import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
-import com.seo92js.news_alpha_backend.dto.ErrorResponse;
+import com.seo92js.news_alpha_backend.domain.member.dto.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;

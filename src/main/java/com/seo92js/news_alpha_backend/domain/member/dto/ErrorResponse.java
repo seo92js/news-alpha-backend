@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.dto;
+package com.seo92js.news_alpha_backend.domain.member.dto;
 
 import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 import lombok.Getter;
