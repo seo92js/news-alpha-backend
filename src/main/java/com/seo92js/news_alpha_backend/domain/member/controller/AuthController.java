@@ -1,4 +1,4 @@
-package com.seo92js.news_alpha_backend.domain.ai.controller;
+package com.seo92js.news_alpha_backend.domain.member.controller;
 
 import com.seo92js.news_alpha_backend.common.AppConstants;
 import com.seo92js.news_alpha_backend.domain.member.dto.*;
