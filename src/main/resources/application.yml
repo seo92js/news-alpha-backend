@@ -19,6 +19,12 @@ spring:
     redis:
       host: ${REDIS_HOST:localhost}
       port: 6379
+  ai:
+    vectorstore:
+      pgvector:
+        index-type: hnsw
+        distance-type: cosine
+        dimensions: 768
 
 naver:
   news:

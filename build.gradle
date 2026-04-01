@@ -52,6 +52,8 @@ dependencies {
 
 	// PostgreSQL
 	runtimeOnly 'org.postgresql:postgresql'
+	// Vector Store
+	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 
 	// Redis
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
