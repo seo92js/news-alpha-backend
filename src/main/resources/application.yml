@@ -23,8 +23,11 @@ spring:
     vectorstore:
       pgvector:
         index-type: hnsw
-        distance-type: cosine
+        distance-type: cosine_distance
         dimensions: 768
+        table-name: news_vector
+        schema-name: public
+        initialize-schema: true
 
 naver:
   news:
