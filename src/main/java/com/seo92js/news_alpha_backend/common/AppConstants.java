@@ -7,7 +7,7 @@ public class AppConstants {
     public static final String SPACE = " ";
     public static final String COMMA = ",";
     public static final String LOG_DELIMETER = COMMA + SPACE; // ", "
-
+    public static final String HYPHEN = "-";
     public static final class Jwt {
         private Jwt() {}
         public static final String PREFIX = "Bearer ";
