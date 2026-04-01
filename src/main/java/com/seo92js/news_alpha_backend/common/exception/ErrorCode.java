@@ -2,7 +2,6 @@ package com.seo92js.news_alpha_backend.common.exception;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
