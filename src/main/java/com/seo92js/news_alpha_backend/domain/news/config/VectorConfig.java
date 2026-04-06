@@ -9,6 +9,6 @@ public class VectorConfig {
 
     @Bean
     public TokenTextSplitter tokenTextSplitter() {
-        return new TokenTextSplitter(450, 60, 10, 10000, true);
+        return new TokenTextSplitter(450, 30, 10, 10000, true);
     }
 }
