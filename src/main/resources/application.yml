@@ -9,7 +9,7 @@ spring:
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     show-sql: true
     properties:
       hibernate:
@@ -23,9 +23,9 @@ spring:
     vectorstore:
       type: pgvector
       pgvector:
-        index-type: hnsw
+        index-type: none
         distance-type: cosine_distance
-        dimensions: 768
+        dimensions: 3072
         table-name: news_vector
         schema-name: public
         initialize-schema: true
@@ -34,7 +34,7 @@ spring:
         embedding:
           text:
             options:
-              model: text-embedding-004
+              model: models/gemini-embedding-001
 
 naver:
   news:

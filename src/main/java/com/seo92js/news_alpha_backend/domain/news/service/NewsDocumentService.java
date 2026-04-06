@@ -10,9 +10,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.IntStream;
 
 @Service
@@ -28,15 +26,15 @@ public class NewsDocumentService {
         if (newsList == null || newsList.isEmpty()) return;
 
         List<Document> chunks = new ArrayList<>();
-        List<String> keywordList = new ArrayList<>();
+        Set<String> keywordSet = new HashSet<>();
 
         for (News news : newsList) {
 
             chunks.addAll(newsToDocument(news));
-            keywordList.add(news.getKeyword());
+            keywordSet.add(news.getKeyword());
         }
 
-        vectorStoreService.save(chunks, String.join(AppConstants.LOG_DELIMETER, keywordList));
+        vectorStoreService.save(chunks, String.join(AppConstants.LOG_DELIMETER, keywordSet));
     }
 
     private List<Document> newsToDocument(News news) {
@@ -48,11 +46,11 @@ public class NewsDocumentService {
         return IntStream.range(0, splitDocs.size())
                 .mapToObj(i -> {
 
-                    String docId = news.getId() + AppConstants.HYPHEN + i;
+                    String uuid = UUID.randomUUID().toString();
                     NewsMetadata newsMetadata = new NewsMetadata(news, i);
                     Map<String, Object> metaData = objectMapper.convertValue(newsMetadata, Map.class);
 
-                    return new Document(docId, splitDocs.get(i).getText(), metaData);
+                    return new Document(uuid, splitDocs.get(i).getText(), metaData);
                 })
                 .toList();
     }
