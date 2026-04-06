@@ -21,6 +21,7 @@ spring:
       port: 6379
   ai:
     vectorstore:
+      type: pgvector
       pgvector:
         index-type: hnsw
         distance-type: cosine_distance
@@ -28,6 +29,12 @@ spring:
         table-name: news_vector
         schema-name: public
         initialize-schema: true
+    google:
+      genai:
+        embedding:
+          text:
+            options:
+              model: text-embedding-004
 
 naver:
   news:
