@@ -1,40 +1,44 @@
 package com.seo92js.news_alpha_backend.domain.news.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.seo92js.news_alpha_backend.common.AppConstants;
 import com.seo92js.news_alpha_backend.domain.ai.dto.NewsMetadata;
 import com.seo92js.news_alpha_backend.domain.ai.service.VectorStoreService;
 import com.seo92js.news_alpha_backend.domain.news.News;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.IntStream;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NewsDocumentService {
 
     private final TokenTextSplitter tokenTextSplitter;
-    private final ObjectMapper objectMapper;
     private final VectorStoreService vectorStoreService;
 
     public void process(List<News> newsList) {
 
         if (newsList == null || newsList.isEmpty()) return;
 
-        List<Document> chunks = new ArrayList<>();
-        Set<String> keywordSet = new HashSet<>();
-
         for (News news : newsList) {
 
-            chunks.addAll(newsToDocument(news));
-            keywordSet.add(news.getKeyword());
+            List<Document> chunks = newsToDocument(news);
+
+            try {
+
+                vectorStoreService.save(chunks);
+            }
+            catch (Exception e) {
+                log.warn("벡터 변환 및 저장에 실패했습니다. 키워드 : {}", news.getKeyword(), e);
+            }
         }
 
-        vectorStoreService.save(chunks, String.join(AppConstants.LOG_DELIMETER, keywordSet));
     }
 
     private List<Document> newsToDocument(News news) {
@@ -46,9 +50,11 @@ public class NewsDocumentService {
         return IntStream.range(0, splitDocs.size())
                 .mapToObj(i -> {
 
-                    String uuid = UUID.randomUUID().toString();
+                    String vectorId = news.getId() + AppConstants.HYPHEN + i;
+                    String uuid = UUID.nameUUIDFromBytes(vectorId.getBytes(StandardCharsets.UTF_8)).toString();
+
                     NewsMetadata newsMetadata = new NewsMetadata(news, i);
-                    Map<String, Object> metaData = objectMapper.convertValue(newsMetadata, Map.class);
+                    Map<String, Object> metaData = newsMetadata.toMap();
 
                     return new Document(uuid, splitDocs.get(i).getText(), metaData);
                 })

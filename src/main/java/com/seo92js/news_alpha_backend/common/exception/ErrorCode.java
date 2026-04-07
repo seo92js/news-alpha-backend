@@ -15,9 +15,6 @@ public enum ErrorCode {
     KEYWORD_NOT_FOUND("KEYWORD_NOT_FOUND", "키워드를 찾을 수 없습니다."),
     DUPLICATE_KEYWORD("DUPLICATE_KEYWORD", "이미 등록된 키워드입니다."),
 
-    // Vector
-    EMBEDDING_FAILURE("EMBEDDING_FAILURE", "벡터 변환 및 저장에 실패했습니다."),
-
     // Common
     INVALID_INPUT("INVALID_INPUT", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");
