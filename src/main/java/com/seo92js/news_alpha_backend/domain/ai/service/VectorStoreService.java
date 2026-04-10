@@ -17,8 +17,6 @@ public class VectorStoreService {
 
     public void save(List<Document> documents) {
 
-        if (documents == null || documents.isEmpty()) return;
-
         vectorStore.accept(documents);
     }
 }

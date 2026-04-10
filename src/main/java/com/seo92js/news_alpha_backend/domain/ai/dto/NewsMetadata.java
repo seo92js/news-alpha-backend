@@ -24,6 +24,7 @@ public record NewsMetadata(
     }
 
     public static final class Keys {
+        private Keys() {}
         public static final String ID = "id";
         public static final String CHUNK_INDEX = "chunkIndex";
         public static final String KEYWORD = "keyword";

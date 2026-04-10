@@ -42,3 +42,7 @@ naver:
       - https://n.news.naver.com/
       - https://sports.news.naver.com/
       - https://entertain.naver.com/
+    splitter:
+      max-chunk-size: 450
+      min-chunk-size: 50
+      overlap-sentences: 0
