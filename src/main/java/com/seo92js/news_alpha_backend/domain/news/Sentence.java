@@ -5,6 +5,11 @@ public record Sentence(
         int length
 )
 {
+    public Sentence {
+        text = text.trim();
+        length = text.length();
+    }
+
     public Sentence(String text) {
         this(text, text.length());
     }
