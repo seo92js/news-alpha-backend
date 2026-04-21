@@ -2,6 +2,7 @@ package com.seo92js.news_alpha_backend.domain.ai.dto;
 
 import com.seo92js.news_alpha_backend.domain.news.News;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public record NewsMetadata(
@@ -19,8 +20,18 @@ public record NewsMetadata(
                 news.getKeyword(),
                 news.getTitle(),
                 news.getLink(),
-                news.getPubDate().toString()
+                resolvePublishedAt(news).toString()
         );
+    }
+
+    private static LocalDateTime resolvePublishedAt(News news) {
+        if (news.getPubDate() != null) {
+            return news.getPubDate();
+        }
+        if (news.getCreatedAt() != null) {
+            return news.getCreatedAt();
+        }
+        return LocalDateTime.now();
     }
 
     public static final class Keys {

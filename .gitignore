@@ -18,8 +18,10 @@ bin/
 *.iml
 *.ipr
 out/
-ㅅ
 !**/src/main/resources/hibernate.cfg.xml
+
+# Local infra data
+infra/local/postgres_data/
 
 ### NetBeans ###
 /nbproject/private/

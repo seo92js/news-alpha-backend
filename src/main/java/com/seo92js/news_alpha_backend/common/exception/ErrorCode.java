@@ -11,9 +11,10 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND("MEMBER_NOT_FOUND", "회원을 찾을 수 없습니다."),
     DUPLICATE_EMAIL("DUPLICATE_EMAIL", "이미 사용 중인 이메일입니다."),
 
-    // Keyword
-    KEYWORD_NOT_FOUND("KEYWORD_NOT_FOUND", "키워드를 찾을 수 없습니다."),
-    DUPLICATE_KEYWORD("DUPLICATE_KEYWORD", "이미 등록된 키워드입니다."),
+    // Stock
+    STOCK_NOT_FOUND("STOCK_NOT_FOUND", "종목을 찾을 수 없습니다."),
+    DUPLICATE_STOCK("DUPLICATE_STOCK", "이미 등록된 종목입니다."),
+    DUPLICATE_STOCK_KEYWORD("DUPLICATE_STOCK_KEYWORD", "이미 등록된 종목 키워드입니다."),
 
     // Common
     INVALID_INPUT("INVALID_INPUT", "입력값이 올바르지 않습니다."),
