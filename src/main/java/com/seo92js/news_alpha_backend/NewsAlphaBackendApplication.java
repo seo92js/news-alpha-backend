@@ -1,6 +1,7 @@
 package com.seo92js.news_alpha_backend;
 
 import com.seo92js.news_alpha_backend.domain.news.NaverNewsProperties;
+import com.seo92js.news_alpha_backend.domain.stock.KrxStockProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -9,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 @EnableJpaAuditing
 @EnableScheduling
-@EnableConfigurationProperties(NaverNewsProperties.class)
+@EnableConfigurationProperties({NaverNewsProperties.class, KrxStockProperties.class})
 @SpringBootApplication
 public class NewsAlphaBackendApplication {
 

@@ -1,5 +1,7 @@
 package com.seo92js.news_alpha_backend.domain.news;
 
+import com.seo92js.news_alpha_backend.common.exception.ApiFetchException;
+import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 import com.seo92js.news_alpha_backend.domain.news.dto.NaverNewsResponse;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
@@ -31,7 +33,10 @@ public class NaverNewsClient {
                 .header("X-Naver-Client-Secret", clientSecret)
                 .retrieve()
                 .onStatus(HttpStatusCode::isError, (request, response) -> {
-                    // TODO : 에러 throw 해주셈
+
+                    throw new ApiFetchException(ErrorCode.API_FETCH_FAILED
+                            , "NaverNews"
+                            , keyword);
                 })
                 .body(NaverNewsResponse.class);
     }
