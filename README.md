@@ -25,6 +25,14 @@ AI가 뉴스 데이터를 분석해 시장 흐름과 투자 신호를 발견하�
 - Grafana : 메트릭 시각화 및 모니터링 대시보드
 - Loki : 로그 수집
 
+### Frontend
+- React & TypeScript : UI 컴포넌트 기반 SPA
+- Vite : 빠른 개발 서버 및 번들링
+- TanStack Query : 서버 상태 캐싱 및 동기화
+- Zustand : 로그인 토큰 등의 클라이언트 전역 상태 관리
+- React Hook Form & Zod : Form 입력 처리 및 유효성 검사
+- Axios : API 요청 및 JWT 인터셉터
+
 ## 핵심기능
 - 자동 뉴스 수집 — 네이버 뉴스 API를 통해 최신 뉴스 데이터 자동 수집
 - 맥락 기반 뉴스 분석 — RAG를 활용해 뉴스 맥락을 이해하고 시장 흐름 분석

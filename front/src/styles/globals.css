@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #0F0F10;
+  --surface: #1A1A1C;
+  --border: #2A2A2E;
+  --text-primary: #F3F3F3;
+  --text-muted: rgba(243, 243, 243, 0.55);
+  --accent: #F5A623;
+  --accent-hover: #F7B84B;
+  --accent-glow: rgba(245, 166, 35, 0.15);
+  --input-bg: #0F0F10;
+  --error: #FF5555;
+  --success: #4ade80;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  font-family: 'Geist', 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
