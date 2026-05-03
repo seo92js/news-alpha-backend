@@ -13,8 +13,6 @@ import java.util.List;
 @Component
 public class KrxStockClient {
 
-    private static final int PAGE_SIZE = 5000;
-
     private final RestClient restClient;
     private final KrxStockProperties properties;
 
@@ -25,14 +23,17 @@ public class KrxStockClient {
         this.properties = properties;
     }
 
+    /**
+     * 공공데이터포털 금융위원회_KRX상장종목정보 전 종목 종목명 + 종목코드 조회
+     */
     public List<KrxStockItem> fetch(String baseDate) {
         return restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/1160100/service/GetKrxListedInfoService/getItemInfo")
                         .queryParam("serviceKey", properties.apiKey())
                         .queryParam("basDt", baseDate)
-//                        .queryParam("numOfRows", PAGE_SIZE)
-//                        .queryParam("pageNo", 1)
+                        .queryParam("numOfRows", 5000)
+                        .queryParam("pageNo", 1)
                         .queryParam("resultType", "json")
                         .build())
                 .retrieve()

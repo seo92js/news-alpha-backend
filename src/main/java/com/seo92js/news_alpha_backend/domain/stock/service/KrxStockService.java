@@ -21,12 +21,11 @@ public class KrxStockService {
     private final KrxStockRepository krxStockRepository;
 
     /**
-     * 국장 전 종목 meta 정보 upsert
+     * 전 종목 meta 정보 upsert
      */
     @Transactional
     public void syncAllStockInfo(String baseDate) {
         List<KrxStockItem> items = krxStockClient.fetch(baseDate);
-        log.debug("{} 일 전체 종목 정보 조회 완료 | 건수: {}", baseDate, items.size());
 
         for (KrxStockItem item : items) {
             krxStockRepository.findByTicker(item.ticker())
