@@ -18,7 +18,7 @@ public class KrxStockScheduler {
 
     private final KrxStockService krxStockService;
 
-//    @Scheduled(cron = "0 0 2 * * *")
+//    @Scheduled(cron = "0 0 14 * * *")
     public void syncStockMeta() {
 
         String baseDate = LocalDate.now().minusDays(1).format(DATE_FORMATTER);
