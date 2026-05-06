@@ -18,10 +18,13 @@ public class KrxStockScheduler {
 
     private final KrxStockService krxStockService;
 
-//    @Scheduled(cron = "0 0 14 * * *")
+//    @Scheduled(cron = "0 0 14 * * MON-FRI")
     public void syncStockMeta() {
 
-        String baseDate = LocalDate.now().minusDays(1).format(DATE_FORMATTER);
+        // 상장종목 정보가 다음날 13시에 update, 이전일 기준으로 조회
+        String baseDate = LocalDate.now()
+                .minusDays(1)
+                .format(DATE_FORMATTER);
 
         try {
 
