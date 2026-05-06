@@ -35,7 +35,7 @@ public class NaverNewsClient {
                 .onStatus(HttpStatusCode::isError, (request, response) -> {
 
                     throw new ApiFetchException(ErrorCode.API_FETCH_FAILED
-                            , "NaverNews"
+                            , getClass().getSimpleName()
                             , keyword);
                 })
                 .body(NaverNewsResponse.class);

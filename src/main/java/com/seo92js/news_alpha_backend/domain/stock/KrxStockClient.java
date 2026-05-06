@@ -40,7 +40,7 @@ public class KrxStockClient {
                 .onStatus(HttpStatusCode::isError, (request, response) -> {
 
                     throw new ApiFetchException(ErrorCode.API_FETCH_FAILED
-                            , "KrxStockInfo"
+                            , getClass().getSimpleName()
                             , baseDate);
                 })
                 .body(KrxStockResponse.class)
