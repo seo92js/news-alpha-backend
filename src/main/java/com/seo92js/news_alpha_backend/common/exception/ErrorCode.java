@@ -16,6 +16,9 @@ public enum ErrorCode {
     DUPLICATE_STOCK("DUPLICATE_STOCK", "이미 등록된 종목입니다."),
     DUPLICATE_STOCK_KEYWORD("DUPLICATE_STOCK_KEYWORD", "이미 등록된 종목 키워드입니다."),
 
+    // API
+    API_FETCH_FAILED("API_FETCH_FAILED", "외부 API 호출에 실패했습니다."),
+
     // Common
     INVALID_INPUT("INVALID_INPUT", "입력값이 올바르지 않습니다."),
     INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "서버 내부 오류가 발생했습니다.");

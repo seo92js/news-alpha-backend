@@ -1,9 +1,7 @@
 package com.seo92js.news_alpha_backend.domain.stock.controller;
 
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordResponse;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordSaveRequest;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockResponse;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockSaveRequest;
+import com.seo92js.news_alpha_backend.domain.stock.dto.*;
+import com.seo92js.news_alpha_backend.domain.stock.service.KrxStockService;
 import com.seo92js.news_alpha_backend.domain.stock.service.StockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +14,7 @@ import java.util.List;
 public class StockController {
 
     private final StockService stockService;
+    private final KrxStockService krxStockService;
 
     @PostMapping
     public StockResponse save(@RequestBody StockSaveRequest request) {
@@ -38,5 +37,10 @@ public class StockController {
     @GetMapping("/{stockId}/keywords")
     public List<StockKeywordResponse> findKeywords(@PathVariable Long stockId) {
         return stockService.findKeywords(stockId);
+    }
+
+    @GetMapping("/meta")
+    public List<StockMetaResponse> findAllMeta() {
+        return krxStockService.findAll();
     }
 }
