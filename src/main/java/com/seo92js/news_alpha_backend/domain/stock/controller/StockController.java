@@ -39,6 +39,11 @@ public class StockController {
         return stockService.findKeywords(stockId);
     }
 
+    @GetMapping("/{stockId}/report/latest")
+    public StockLatestReportResponse findLatestReport(@PathVariable Long stockId) {
+        return stockService.findLatestReport(stockId);
+    }
+
     @GetMapping("/meta")
     public List<StockMetaResponse> findAllMeta() {
         return krxStockService.findAll();

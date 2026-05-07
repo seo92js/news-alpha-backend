@@ -4,12 +4,15 @@ import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordResponse;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordSaveRequest;
+import com.seo92js.news_alpha_backend.domain.stock.dto.StockLatestReportResponse;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockResponse;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockSaveRequest;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockKeywordException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.StockNotFoundException;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
+import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
+import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportSignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,8 @@ public class StockService {
 
     private final StockRepository stockRepository;
     private final StockKeywordRepository stockKeywordRepository;
+    private final StockReportRepository stockReportRepository;
+    private final StockReportSignalRepository stockReportSignalRepository;
 
     /**
      * 종목 저장
@@ -72,6 +77,23 @@ public class StockService {
             throw new StockNotFoundException(stockId);
         }
         return findKeywordResponses(stockId);
+    }
+
+    /**
+     * 특정 종목의 가장 최근 생성된 리포트 1건 조회
+     */
+    @Transactional(readOnly = true)
+    public StockLatestReportResponse findLatestReport(Long stockId) {
+        if (!stockRepository.existsById(stockId)) {
+            throw new StockNotFoundException(stockId);
+        }
+
+        return stockReportRepository.findTopByStockIdOrderByGeneratedAtDesc(stockId)
+                .map(stockReport -> StockLatestReportResponse.from(
+                        stockReport,
+                        stockReportSignalRepository.findSignalSummariesByStockReportId(stockReport.getId())
+                ))
+                .orElse(null);
     }
 
     private List<StockKeywordResponse> findKeywordResponses(Long stockId) {
