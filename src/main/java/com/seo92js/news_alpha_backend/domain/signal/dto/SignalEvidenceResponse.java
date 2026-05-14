@@ -1,7 +1,5 @@
 package com.seo92js.news_alpha_backend.domain.signal.dto;
 
-import com.seo92js.news_alpha_backend.domain.signal.SignalEvidence;
-
 import java.time.LocalDateTime;
 
 public record SignalEvidenceResponse(
@@ -11,13 +9,13 @@ public record SignalEvidenceResponse(
         String url,
         LocalDateTime publishedAt
 ) {
-    public static SignalEvidenceResponse from(SignalEvidence evidence) {
+    public static SignalEvidenceResponse from(SignalEvidenceRow evidence) {
         return new SignalEvidenceResponse(
-                evidence.getNewsId(),
-                evidence.getRankOrder(),
-                evidence.getTitle(),
-                evidence.getUrl(),
-                evidence.getPublishedAt()
+                evidence.newsId(),
+                evidence.rankOrder(),
+                evidence.title(),
+                evidence.url(),
+                evidence.publishedAt()
         );
     }
 }

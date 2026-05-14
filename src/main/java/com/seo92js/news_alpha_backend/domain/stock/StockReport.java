@@ -12,11 +12,6 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_stock_report_stock_report_date", columnNames = {"stock_id", "report_date"})
-        }
-)
 public class StockReport extends BaseEntity {
 
     @Id
@@ -47,11 +42,5 @@ public class StockReport extends BaseEntity {
         stockReport.report = report;
         stockReport.generatedAt = generatedAt;
         return stockReport;
-    }
-
-    public void update(int signalCount, String report, LocalDateTime generatedAt) {
-        this.signalCount = signalCount;
-        this.report = report;
-        this.generatedAt = generatedAt;
     }
 }

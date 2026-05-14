@@ -5,7 +5,7 @@ import com.seo92js.news_alpha_backend.domain.signal.SignalType;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record SignalResponse(
+public record SignalDetailResponse(
         Long id,
         String keyword,
         SignalType type,
@@ -16,10 +16,10 @@ public record SignalResponse(
         LocalDateTime firstPublishedAt,
         LocalDateTime lastPublishedAt,
         LocalDateTime detectedAt,
-        List<SignalEvidenceResponse> evidences
+        List<SignalEvidenceDetailResponse> evidences
 ) {
-    public static SignalResponse from(SignalView signal, List<SignalEvidenceResponse> evidences) {
-        return new SignalResponse(
+    public static SignalDetailResponse from(SignalView signal, List<SignalEvidenceDetailResponse> evidences) {
+        return new SignalDetailResponse(
                 signal.id(),
                 signal.keyword(),
                 signal.type(),
