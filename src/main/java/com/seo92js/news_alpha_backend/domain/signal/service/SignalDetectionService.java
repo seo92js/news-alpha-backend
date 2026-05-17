@@ -9,11 +9,12 @@ import com.seo92js.news_alpha_backend.domain.signal.SignalEvidence;
 import com.seo92js.news_alpha_backend.domain.signal.SignalType;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
+import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -66,24 +67,27 @@ public class SignalDetectionService {
     private final NewsRepository newsRepository;
     private final SignalRepository signalRepository;
     private final SignalEvidenceRepository signalEvidenceRepository;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 새로 저장된 뉴스를 seed로 삼아 유사 뉴스 군집을 찾고 시그널, 근거, 보고서를 저장
      */
-    @Transactional
-    public void detect(List<News> savedNews) {
+    public void detect(Stock stock, List<News> savedNews) {
+        if (stock == null) {
+            return;
+        }
         if (savedNews == null || savedNews.isEmpty()) {
             return;
         }
 
         for (News news : savedNews) {
             try {
-                buildSignalCandidate(news)
+                buildSignalCandidate(stock, news)
                         .filter(candidate -> !signalRepository.existsBySignalKey(candidate.signal().getSignalKey()))
-                        .ifPresent(candidate -> {
+                        .ifPresent(candidate -> transactionTemplate.executeWithoutResult(status -> {
                             Signal savedSignal = signalRepository.save(candidate.signal());
                             saveEvidences(savedSignal, candidate.cluster());
-                        });
+                        }));
             } catch (Exception e) {
                 log.warn("시그널 탐지에 실패했습니다. newsId={}, keyword={}", news.getId(), news.getKeyword(), e);
             }
@@ -93,7 +97,7 @@ public class SignalDetectionService {
     /**
      * 단일 뉴스를 기준으로 시그널 후보를 만들고 최소 군집 크기와 burst 조건을 검증
      */
-    private Optional<SignalCandidate> buildSignalCandidate(News seedNews) {
+    private Optional<SignalCandidate> buildSignalCandidate(Stock stock, News seedNews) {
         if (seedNews.getId() == null || seedNews.getContent() == null || seedNews.getContent().isBlank()) {
             return Optional.empty();
         }
@@ -120,10 +124,11 @@ public class SignalDetectionService {
                 .orElse(resolvePublishedAt(seedNews));
 
         double score = calculateScore(cluster.size(), burstCount, lastPublishedAt);
-        String signalKey = createSignalKey(seedNews.getKeyword(), cluster);
+        String signalKey = createSignalKey(stock, seedNews.getKeyword(), cluster);
         String title = cluster.get(0).title();
         Signal signal = Signal.of(
                 signalKey,
+                stock,
                 SignalType.EMERGING_CLUSTER,
                 seedNews.getKeyword(),
                 title,
@@ -261,8 +266,8 @@ public class SignalDetectionService {
     /**
      * 동일한 뉴스 군집으로 중복 시그널이 생성되지 않도록 결정적 signalKey 생성
      */
-    private String createSignalKey(String keyword, List<ClusteredNews> cluster) {
-        String fingerprintSource = keyword + ":" + cluster.stream()
+    private String createSignalKey(Stock stock, String keyword, List<ClusteredNews> cluster) {
+        String fingerprintSource = stock.getId() + ":" + keyword + ":" + cluster.stream()
                 .map(item -> Long.toString(item.newsId()))
                 .sorted()
                 .limit(6)
