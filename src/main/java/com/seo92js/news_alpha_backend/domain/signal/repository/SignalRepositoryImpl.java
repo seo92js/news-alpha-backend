@@ -11,8 +11,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static com.seo92js.news_alpha_backend.domain.signal.QSignal.signal;
-import static com.seo92js.news_alpha_backend.domain.signal.QSignalEvidence.signalEvidence;
-import static com.seo92js.news_alpha_backend.domain.stock.QNewsStock.newsStock;
 
 @RequiredArgsConstructor
 public class SignalRepositoryImpl implements SignalRepositoryCustom {
@@ -24,12 +22,10 @@ public class SignalRepositoryImpl implements SignalRepositoryCustom {
     @Override
     public List<Signal> findRecentSignalsByStockId(Long stockId, LocalDateTime since, Pageable pageable) {
         return queryFactory
-                .selectDistinct(signal)
+                .select(signal)
                 .from(signal)
-                .join(signalEvidence).on(signalEvidence.signal.eq(signal))
-                .join(newsStock).on(newsStock.news.id.eq(signalEvidence.newsId))
                 .where(
-                        newsStock.stock.id.eq(stockId),
+                        signal.stock.id.eq(stockId),
                         signal.detectedAt.goe(since)
                 )
                 .orderBy(signal.score.desc(), signal.detectedAt.desc())

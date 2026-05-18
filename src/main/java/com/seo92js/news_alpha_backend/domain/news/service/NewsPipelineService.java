@@ -3,7 +3,6 @@ package com.seo92js.news_alpha_backend.domain.news.service;
 import com.seo92js.news_alpha_backend.domain.news.News;
 import com.seo92js.news_alpha_backend.domain.signal.service.SignalDetectionService;
 import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
-import com.seo92js.news_alpha_backend.domain.stock.service.NewsStockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +17,6 @@ public class NewsPipelineService {
     private final NewsService newsService;
     private final NewsDocumentService newsDocumentService;
     private final SignalDetectionService signalDetectionService;
-    private final NewsStockService newsStockService;
 
     /**
      * StockKeyword 기준으로 뉴스 수집, Stock 연결, 임베딩 저장, 시그널 탐지를 순서대로 실행
@@ -29,9 +27,8 @@ public class NewsPipelineService {
             return savedNews;
         }
 
-        newsStockService.connect(savedNews, stockKeyword.getStock(), stockKeyword.getKeyword());
         newsDocumentService.process(savedNews);
-        signalDetectionService.detect(savedNews);
+        signalDetectionService.detect(stockKeyword.getStock(), savedNews);
         log.info(
                 "종목 뉴스 파이프라인 처리 완료. stock={}, keyword={}, savedCount={}",
                 stockKeyword.getStock().getName(),

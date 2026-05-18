@@ -1,6 +1,7 @@
 package com.seo92js.news_alpha_backend.domain.signal;
 
 import com.seo92js.news_alpha_backend.BaseEntity;
+import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,6 +12,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(indexes = {
+        @Index(name = "idx_signal_stock_detected", columnList = "stock_id, detected_at DESC")
+})
 public class Signal extends BaseEntity {
 
     @Id
@@ -19,6 +23,10 @@ public class Signal extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String signalKey;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stock_id", nullable = false)
+    private Stock stock;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -48,6 +56,7 @@ public class Signal extends BaseEntity {
 
     public static Signal of(
             String signalKey,
+            Stock stock,
             SignalType type,
             String keyword,
             String title,
@@ -60,6 +69,7 @@ public class Signal extends BaseEntity {
     ) {
         Signal signal = new Signal();
         signal.signalKey = signalKey;
+        signal.stock = stock;
         signal.type = type;
         signal.keyword = keyword;
         signal.title = title;
