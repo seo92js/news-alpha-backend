@@ -7,8 +7,11 @@ import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRep
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
+import com.seo92js.news_alpha_backend.domain.stock.StockReport;
+import com.seo92js.news_alpha_backend.domain.stock.dto.StockSignalSummaryResponse;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
+import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportSignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockRepository;
 import com.seo92js.news_alpha_backend.domain.stock.service.StockReportService;
 import org.junit.jupiter.api.Disabled;
@@ -22,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @WithMockUser
 @SpringBootTest
@@ -45,6 +49,9 @@ class NewsServiceTest {
     StockReportRepository stockReportRepository;
 
     @Autowired
+    StockReportSignalRepository stockReportSignalRepository;
+
+    @Autowired
     StockReportService stockReportService;
 
     @MockitoBean
@@ -53,23 +60,10 @@ class NewsServiceTest {
     @Disabled
     @Test
     void collectEmbedDetectSignalAndGenerateStockReport() {
-        Stock stock = stockRepository.findByTickerAndMarket("TSLA", "NASDAQ")
-                .orElseGet(() -> stockRepository.save(Stock.of("TSLA", "테슬라", "NASDAQ")));
-
-        if (!stockKeywordRepository.existsByStockIdAndKeyword(stock.getId(), "테슬라")) {
-            stockKeywordRepository.save(StockKeyword.of(stock, "테슬라"));
-        }
-        if (!stockKeywordRepository.existsByStockIdAndKeyword(stock.getId(), "일론머스크")) {
-            stockKeywordRepository.save(StockKeyword.of(stock, "일론머스크"));
-        }
-
-        List<StockKeyword> enabledKeywords = stockKeywordRepository.findEnabledWithStock();
-        StockKeyword stockKeyword1 = enabledKeywords.stream()
-                .filter(sk -> sk.getKeyword().equals("테슬라"))
-                .findFirst().orElseThrow();
-        StockKeyword stockKeyword2 = enabledKeywords.stream()
-                .filter(sk -> sk.getKeyword().equals("일론머스크"))
-                .findFirst().orElseThrow();
+        Stock stock = stockRepository.findByTickerAndMarket("A000660", "KOSPI")
+                .orElseGet(() -> stockRepository.save(Stock.of("A000660", "SK하이닉스", "KOSPI")));
+        StockKeyword stockKeyword1 = findOrCreateKeyword(stock, "하이닉스");
+        StockKeyword stockKeyword2 = findOrCreateKeyword(stock, "D램");
 
         long signalCountBefore = signalRepository.count();
         long evidenceCountBefore = signalEvidenceRepository.count();
@@ -83,12 +77,27 @@ class NewsServiceTest {
         long signalCountAfter = signalRepository.count();
         long evidenceCountAfter = signalEvidenceRepository.count();
         long stockReportCountAfter = stockReportRepository.count();
-        Optional<?> latestStockReport = stockReportRepository.findTopByStockIdOrderByGeneratedAtDesc(stock.getId());
+        Optional<StockReport> latestStockReport = stockReportRepository.findTopByStockIdOrderByGeneratedAtDesc(stock.getId());
 
         assertNotNull(discoveredNews1);
         assertNotNull(discoveredNews2);
+        assertTrue(latestStockReport.isPresent(), "종목 리포트가 생성되어야 함");
+
+        List<StockSignalSummaryResponse> reportSignals = stockReportSignalRepository.findSignalSummariesByStockReportId(
+                latestStockReport.orElseThrow().getId()
+        );
+        assertTrue(reportSignals.size() <= 5);
+        reportSignals.forEach(signal -> {
+            assertNotNull(signal.eventType());
+            assertNotNull(signal.eventTypeLabel());
+            assertNotNull(signal.sentiment());
+            assertNotNull(signal.sentimentLabel());
+            assertNotNull(signal.confidence());
+            assertNotNull(signal.investorSummary());
+        });
+
         System.out.printf(
-                "stock pipeline result - stock=%s, keyword1=%s, keyword2=%s, discoveredNews1=%d, discoveredNews2=%d, signals=%d->%d, evidences=%d->%d, stockReports=%d->%d, latestStockReport=%s%n",
+                "stock pipeline result - stock=%s, keyword1=%s, keyword2=%s, discoveredNews1=%d, discoveredNews2=%d, signals=%d->%d, evidences=%d->%d, stockReports=%d->%d, latestStockReport=%s, reportSignals=%d%n",
                 stock.getName(),
                 stockKeyword1.getKeyword(),
                 stockKeyword2.getKeyword(),
@@ -100,7 +109,13 @@ class NewsServiceTest {
                 evidenceCountAfter,
                 stockReportCountBefore,
                 stockReportCountAfter,
-                latestStockReport.isPresent()
+                latestStockReport.isPresent(),
+                reportSignals.size()
         );
+    }
+
+    private StockKeyword findOrCreateKeyword(Stock stock, String keyword) {
+        return stockKeywordRepository.findByStockIdAndKeyword(stock.getId(), keyword)
+                .orElseGet(() -> stockKeywordRepository.save(StockKeyword.of(stock, keyword)));
     }
 }

@@ -41,6 +41,17 @@ public class Signal extends BaseEntity {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String summary;
 
+    @Enumerated(EnumType.STRING)
+    private SignalEventType eventType;
+
+    @Enumerated(EnumType.STRING)
+    private SignalSentiment sentiment;
+
+    private Integer confidence;
+
+    @Column(columnDefinition = "TEXT")
+    private String investorSummary;
+
     @Column(nullable = false)
     private double score;
 
@@ -61,6 +72,10 @@ public class Signal extends BaseEntity {
             String keyword,
             String title,
             String summary,
+            SignalEventType eventType,
+            SignalSentiment sentiment,
+            int confidence,
+            String investorSummary,
             double score,
             int relatedNewsCount,
             LocalDateTime firstPublishedAt,
@@ -74,6 +89,10 @@ public class Signal extends BaseEntity {
         signal.keyword = keyword;
         signal.title = title;
         signal.summary = summary;
+        signal.eventType = eventType;
+        signal.sentiment = sentiment;
+        signal.confidence = confidence;
+        signal.investorSummary = investorSummary;
         signal.score = score;
         signal.relatedNewsCount = relatedNewsCount;
         signal.firstPublishedAt = firstPublishedAt;
