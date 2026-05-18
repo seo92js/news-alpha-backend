@@ -7,7 +7,6 @@ import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordReposi
 import com.seo92js.news_alpha_backend.domain.stock.service.StockReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -32,7 +31,6 @@ public class NewsAnalysisScheduler {
      * StockKeyword 기준 수집부터 StockReport 생성까지 종목 뉴스 분석 파이프라인 실행
      */
     // @Scheduled(cron = "0 0 0/4 * * *")
-    @Scheduled(initialDelay = 1000, fixedDelay = Long.MAX_VALUE)
     public void runStockAnalysisPipeline() {
         List<StockKeyword> stockKeywords = stockKeywordRepository.findEnabledWithStock();
 

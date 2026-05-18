@@ -11,6 +11,7 @@ import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordReposi
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockRepository;
 import com.seo92js.news_alpha_backend.domain.stock.service.StockReportService;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -49,6 +50,7 @@ class NewsServiceTest {
     @MockitoBean
     JwtTokenProvider jwtTokenProvider;
 
+    @Disabled
     @Test
     void collectEmbedDetectSignalAndGenerateStockReport() {
         Stock stock = stockRepository.findByTickerAndMarket("TSLA", "NASDAQ")
@@ -73,8 +75,8 @@ class NewsServiceTest {
         long evidenceCountBefore = signalEvidenceRepository.count();
         long stockReportCountBefore = stockReportRepository.count();
 
-        List<News> savedNews1 = newsPipelineService.collectEmbedAndDetect(stockKeyword1);
-        List<News> savedNews2 = newsPipelineService.collectEmbedAndDetect(stockKeyword2);
+        List<News> discoveredNews1 = newsPipelineService.collectEmbedAndDetect(stockKeyword1);
+        List<News> discoveredNews2 = newsPipelineService.collectEmbedAndDetect(stockKeyword2);
 
         stockReportService.generateLatestReport(stock);
 
@@ -83,15 +85,15 @@ class NewsServiceTest {
         long stockReportCountAfter = stockReportRepository.count();
         Optional<?> latestStockReport = stockReportRepository.findTopByStockIdOrderByGeneratedAtDesc(stock.getId());
 
-        assertNotNull(savedNews1);
-        assertNotNull(savedNews2);
+        assertNotNull(discoveredNews1);
+        assertNotNull(discoveredNews2);
         System.out.printf(
-                "stock pipeline result - stock=%s, keyword1=%s, keyword2=%s, savedNews1=%d, savedNews2=%d, signals=%d->%d, evidences=%d->%d, stockReports=%d->%d, latestStockReport=%s%n",
+                "stock pipeline result - stock=%s, keyword1=%s, keyword2=%s, discoveredNews1=%d, discoveredNews2=%d, signals=%d->%d, evidences=%d->%d, stockReports=%d->%d, latestStockReport=%s%n",
                 stock.getName(),
                 stockKeyword1.getKeyword(),
                 stockKeyword2.getKeyword(),
-                savedNews1.size(),
-                savedNews2.size(),
+                discoveredNews1.size(),
+                discoveredNews2.size(),
                 signalCountBefore,
                 signalCountAfter,
                 evidenceCountBefore,

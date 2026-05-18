@@ -24,7 +24,9 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -70,26 +72,34 @@ public class SignalDetectionService {
     private final TransactionTemplate transactionTemplate;
 
     /**
-     * 새로 저장된 뉴스를 seed로 삼아 유사 뉴스 군집을 찾고 시그널, 근거, 보고서를 저장
+     * 수집 키워드에서 발견된 뉴스를 seed로 삼아 유사 뉴스 군집을 찾고 시그널, 근거를 저장
      */
-    public void detect(Stock stock, List<News> savedNews) {
+    public void detect(Stock stock, String keyword, List<News> discoveredNews) {
         if (stock == null) {
             return;
         }
-        if (savedNews == null || savedNews.isEmpty()) {
+        if (keyword == null || keyword.isBlank()) {
+            return;
+        }
+        if (discoveredNews == null || discoveredNews.isEmpty()) {
             return;
         }
 
-        for (News news : savedNews) {
+        Set<Long> discoveredNewsIds = discoveredNews.stream()
+                .map(News::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (News news : discoveredNews) {
             try {
-                buildSignalCandidate(stock, news)
+                buildSignalCandidate(stock, keyword, news, discoveredNewsIds)
                         .filter(candidate -> !signalRepository.existsBySignalKey(candidate.signal().getSignalKey()))
                         .ifPresent(candidate -> transactionTemplate.executeWithoutResult(status -> {
                             Signal savedSignal = signalRepository.save(candidate.signal());
                             saveEvidences(savedSignal, candidate.cluster());
                         }));
             } catch (Exception e) {
-                log.warn("시그널 탐지에 실패했습니다. newsId={}, keyword={}", news.getId(), news.getKeyword(), e);
+                log.warn("시그널 탐지에 실패했습니다. newsId={}, keyword={}", news.getId(), keyword, e);
             }
         }
     }
@@ -97,12 +107,12 @@ public class SignalDetectionService {
     /**
      * 단일 뉴스를 기준으로 시그널 후보를 만들고 최소 군집 크기와 burst 조건을 검증
      */
-    private Optional<SignalCandidate> buildSignalCandidate(Stock stock, News seedNews) {
+    private Optional<SignalCandidate> buildSignalCandidate(Stock stock, String keyword, News seedNews, Set<Long> discoveredNewsIds) {
         if (seedNews.getId() == null || seedNews.getContent() == null || seedNews.getContent().isBlank()) {
             return Optional.empty();
         }
 
-        List<ClusteredNews> cluster = buildCluster(seedNews);
+        List<ClusteredNews> cluster = buildCluster(seedNews, keyword, discoveredNewsIds);
         if (cluster.size() < MIN_CLUSTER_NEWS_COUNT) {
             return Optional.empty();
         }
@@ -124,15 +134,15 @@ public class SignalDetectionService {
                 .orElse(resolvePublishedAt(seedNews));
 
         double score = calculateScore(cluster.size(), burstCount, lastPublishedAt);
-        String signalKey = createSignalKey(stock, seedNews.getKeyword(), cluster);
+        String signalKey = createSignalKey(stock, keyword, cluster);
         String title = cluster.get(0).title();
         Signal signal = Signal.of(
                 signalKey,
                 stock,
                 SignalType.EMERGING_CLUSTER,
-                seedNews.getKeyword(),
+                keyword,
                 title,
-                buildSummary(seedNews.getKeyword(), cluster.size(), burstCount, firstPublishedAt, lastPublishedAt),
+                buildSummary(keyword, cluster.size(), burstCount, firstPublishedAt, lastPublishedAt),
                 score,
                 cluster.size(),
                 firstPublishedAt,
@@ -170,23 +180,23 @@ public class SignalDetectionService {
     /**
      * seed 뉴스와 의미가 비슷한 최근 뉴스들을 벡터 검색으로 찾아 뉴스 단위 군집 생성
      */
-    private List<ClusteredNews> buildCluster(News seedNews) {
+    private List<ClusteredNews> buildCluster(News seedNews, String keyword, Set<Long> discoveredNewsIds) {
         Map<Long, ClusteredNews> cluster = new LinkedHashMap<>();
         ClusteredNews seed = new ClusteredNews(
                 seedNews.getId(),
-                seedNews.getKeyword(),
+                keyword,
                 seedNews.getTitle(),
                 seedNews.getLink(),
                 resolvePublishedAt(seedNews)
         );
         cluster.put(seed.newsId(), seed);
 
-        List<Document> documents = vectorStoreService.similaritySearch(buildQuery(seedNews), SIMILAR_TOP_K, SIMILARITY_THRESHOLD);
+        List<Document> documents = vectorStoreService.similaritySearch(buildQuery(keyword, seedNews), SIMILAR_TOP_K, SIMILARITY_THRESHOLD);
         LocalDateTime windowStart = LocalDateTime.now().minusHours(RECENT_WINDOW_HOURS);
 
         for (Document document : documents) {
             toClusteredNews(document)
-                    .filter(item -> seedNews.getKeyword().equals(item.keyword()))
+                    .filter(item -> discoveredNewsIds.contains(item.newsId()))
                     .filter(item -> !item.publishedAt().isBefore(windowStart))
                     .ifPresent(item -> cluster.putIfAbsent(item.newsId(), item));
         }
@@ -217,10 +227,10 @@ public class SignalDetectionService {
     /**
      * 유사 뉴스 검색에 사용할 query 문자열 생성
      */
-    private String buildQuery(News news) {
+    private String buildQuery(String keyword, News news) {
         List<String> fragments = new ArrayList<>();
-        if (news.getKeyword() != null && !news.getKeyword().isBlank()) {
-            fragments.add(news.getKeyword());
+        if (keyword != null && !keyword.isBlank()) {
+            fragments.add(keyword);
         }
         if (news.getTitle() != null && !news.getTitle().isBlank()) {
             fragments.add(news.getTitle());
