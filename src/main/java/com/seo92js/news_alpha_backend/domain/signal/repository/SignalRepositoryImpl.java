@@ -8,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.seo92js.news_alpha_backend.domain.signal.QSignal.signal;
 
@@ -44,6 +47,10 @@ public class SignalRepositoryImpl implements SignalRepositoryCustom {
                         signal.type,
                         signal.title,
                         signal.summary,
+                        signal.eventType,
+                        signal.sentiment,
+                        signal.confidence,
+                        signal.investorSummary,
                         signal.score,
                         signal.relatedNewsCount,
                         signal.firstPublishedAt,
@@ -66,6 +73,10 @@ public class SignalRepositoryImpl implements SignalRepositoryCustom {
                         signal.type,
                         signal.title,
                         signal.summary,
+                        signal.eventType,
+                        signal.sentiment,
+                        signal.confidence,
+                        signal.investorSummary,
                         signal.score,
                         signal.relatedNewsCount,
                         signal.firstPublishedAt,
@@ -75,5 +86,20 @@ public class SignalRepositoryImpl implements SignalRepositoryCustom {
                 .from(signal)
                 .where(signal.id.eq(signalId))
                 .fetchOne();
+    }
+
+    @Override
+    public Set<String> findExistingSignalKeys(Collection<String> signalKeys) {
+        if (signalKeys == null || signalKeys.isEmpty()) {
+            return Set.of();
+        }
+
+        return queryFactory
+                .select(signal.signalKey)
+                .from(signal)
+                .where(signal.signalKey.in(signalKeys))
+                .fetch()
+                .stream()
+                .collect(Collectors.toSet());
     }
 }

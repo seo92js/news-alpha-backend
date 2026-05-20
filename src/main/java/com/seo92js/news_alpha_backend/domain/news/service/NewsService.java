@@ -14,10 +14,16 @@ import org.springframework.web.util.HtmlUtils;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Objects;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,43 +46,81 @@ public class NewsService {
             DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss Z", Locale.ENGLISH);
 
     /**
-     * 뉴스 조회 & 크롤링 후 저장한 신규 뉴스 반환
+     * 뉴스 조회 후 기존 뉴스는 재사용하고, 신규 뉴스만 크롤링/저장해서 수집 결과 반환
      */
-    public List<News> fetchAndSaveNews(String keyword) {
+    public CollectedNewsResult collectNews(String keyword) {
         NaverNewsResponse response = naverNewsClient.fetch(keyword, clientId, clientSecret);
 
         if (response == null || response.items() == null || response.items().isEmpty()) {
-            return Collections.emptyList();
+            return new CollectedNewsResult(Collections.emptyList(), Collections.emptyList());
         }
 
-        List<News> newsList = response.items().stream()
+        List<NaverNewsResponse.Item> supportedItems = filterSupportedItems(response.items());
+        if (supportedItems.isEmpty()) {
+            return new CollectedNewsResult(Collections.emptyList(), Collections.emptyList());
+        }
+
+        Map<String, News> existingNewsByOriginalLink = newsRepository.findAllByOriginalLinkIn(
+                        supportedItems.stream()
+                                .map(NaverNewsResponse.Item::originallink)
+                                .toList()
+                )
+                .stream()
+                .collect(Collectors.toMap(News::getOriginalLink, Function.identity()));
+
+        List<News> discoveredNews = new ArrayList<>();
+        List<News> newlySavedNews = new ArrayList<>();
+
+        for (NaverNewsResponse.Item item : supportedItems) {
+            News existingNews = existingNewsByOriginalLink.get(item.originallink());
+            if (existingNews != null) {
+                discoveredNews.add(existingNews);
+                continue;
+            }
+
+            crawlAndCreateNews(keyword, item).ifPresent(news -> {
+                discoveredNews.add(news);
+                newlySavedNews.add(news);
+            });
+        }
+
+        if (!newlySavedNews.isEmpty()) {
+            newsRepository.saveAll(newlySavedNews);
+        }
+
+        return new CollectedNewsResult(discoveredNews, newlySavedNews);
+    }
+
+    /**
+     * 지원 URL이면서 originalLink가 있는 뉴스만 API 응답 순서대로 중복 제거
+     */
+    private List<NaverNewsResponse.Item> filterSupportedItems(List<NaverNewsResponse.Item> items) {
+        Set<String> seenOriginalLinks = new LinkedHashSet<>();
+        return items.stream()
+                .filter(item -> item.originallink() != null && !item.originallink().isBlank())
                 .filter(item -> naverNewsProperties.isSupportedUrl(item.link()))
-                .filter(item -> !newsRepository.existsByOriginalLink(item.originallink()))
-                .map(item -> {
-                    String content = naverArticleCrawler.crawl(item.link());
-
-                    if (content == null) {
-                        return null; // 크롤링 실패 시 null 반환
-                    }
-
-                    return News.of(
-                            keyword,
-                            cleanText(item.title()),
-                            item.originallink(),
-                            item.link(),
-                            cleanText(item.description()),
-                            content,
-                            parsePubDate(item.pubDate())
-                    );
-                })
-                .filter(Objects::nonNull) //크롤링 실패한 뉴스 제거
+                .filter(item -> seenOriginalLinks.add(item.originallink()))
                 .toList();
+    }
 
-        if (!newsList.isEmpty()) {
-            newsRepository.saveAll(newsList);
+    /**
+     * 신규 뉴스 본문 크롤링 후 저장 가능한 News 엔티티 생성
+     */
+    private Optional<News> crawlAndCreateNews(String keyword, NaverNewsResponse.Item item) {
+        String content = naverArticleCrawler.crawl(item.link());
+        if (content == null) {
+            return Optional.empty();
         }
 
-        return newsList;
+        return Optional.of(News.of(
+                keyword,
+                cleanText(item.title()),
+                item.originallink(),
+                item.link(),
+                cleanText(item.description()),
+                content,
+                parsePubDate(item.pubDate())
+        ));
     }
 
     /**

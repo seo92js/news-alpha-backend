@@ -23,6 +23,10 @@ public class StockReportSignalRepositoryImpl implements StockReportSignalReposit
                         signal.id,
                         signal.title,
                         signal.summary,
+                        signal.eventType,
+                        signal.sentiment,
+                        signal.confidence,
+                        signal.investorSummary,
                         signal.score,
                         signal.relatedNewsCount,
                         signal.detectedAt

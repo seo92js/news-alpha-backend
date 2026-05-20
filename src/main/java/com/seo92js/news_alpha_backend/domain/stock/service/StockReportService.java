@@ -91,13 +91,17 @@ public class StockReportService {
 
     private String buildPrompt(Stock stock, LocalDate reportDate, List<Signal> signals) {
         String signalBlock = signals.stream()
-                .map(signal -> "- 제목: %s | 점수: %.1f | 관련 기사 수: %d | 탐지 시각: %s | 요약: %s"
+                .map(signal -> "- 제목: %s | 이벤트: %s | 방향성: %s | 확신도: %d | 점수: %.1f | 관련 기사 수: %d | 탐지 시각: %s | 요약: %s | 투자자 관점: %s"
                         .formatted(
                                 signal.getTitle(),
+                                signal.getEventType() == null ? "ETC" : signal.getEventType(),
+                                signal.getSentiment() == null ? "NEUTRAL" : signal.getSentiment(),
+                                signal.getConfidence() == null ? 50 : signal.getConfidence(),
                                 signal.getScore(),
                                 signal.getRelatedNewsCount(),
                                 signal.getDetectedAt().format(DATE_TIME_FORMATTER),
-                                signal.getSummary()
+                                signal.getSummary(),
+                                signal.getInvestorSummary() == null ? signal.getSummary() : signal.getInvestorSummary()
                         ))
                 .collect(Collectors.joining("\n"));
 

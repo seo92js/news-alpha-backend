@@ -19,22 +19,23 @@ public class NewsPipelineService {
     private final SignalDetectionService signalDetectionService;
 
     /**
-     * StockKeyword 기준으로 뉴스 수집, Stock 연결, 임베딩 저장, 시그널 탐지를 순서대로 실행
+     * StockKeyword 기준으로 뉴스 수집, 신규 뉴스 임베딩 저장, 발견 뉴스 기반 시그널 탐지를 순서대로 실행
      */
     public List<News> collectEmbedAndDetect(StockKeyword stockKeyword) {
-        List<News> savedNews = newsService.fetchAndSaveNews(stockKeyword.getKeyword());
-        if (savedNews.isEmpty()) {
-            return savedNews;
+        CollectedNewsResult collectedNews = newsService.collectNews(stockKeyword.getKeyword());
+        if (collectedNews.discoveredNews().isEmpty()) {
+            return collectedNews.discoveredNews();
         }
 
-        newsDocumentService.process(savedNews);
-        signalDetectionService.detect(stockKeyword.getStock(), savedNews);
+        newsDocumentService.process(collectedNews.newlySavedNews());
+        signalDetectionService.detect(stockKeyword.getStock(), stockKeyword.getKeyword(), collectedNews.discoveredNews());
         log.info(
-                "종목 뉴스 파이프라인 처리 완료. stock={}, keyword={}, savedCount={}",
+                "종목 뉴스 파이프라인 처리 완료. stock={}, keyword={}, discoveredCount={}, savedCount={}",
                 stockKeyword.getStock().getName(),
                 stockKeyword.getKeyword(),
-                savedNews.size()
+                collectedNews.discoveredNews().size(),
+                collectedNews.newlySavedNews().size()
         );
-        return savedNews;
+        return collectedNews.discoveredNews();
     }
 }

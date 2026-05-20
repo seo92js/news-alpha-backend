@@ -1,5 +1,7 @@
 package com.seo92js.news_alpha_backend.domain.stock.service;
 
+import com.seo92js.news_alpha_backend.domain.signal.SignalEventType;
+import com.seo92js.news_alpha_backend.domain.signal.SignalSentiment;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockReport;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockLatestReportResponse;
@@ -61,8 +63,18 @@ class StockServiceTest {
         );
 
         List<StockSignalSummaryResponse> signals = List.of(
-                new StockSignalSummaryResponse(101L, "로보택시 기대감 재점화", "최근 기사 급증", 88.2, 6, LocalDateTime.of(2026, 5, 7, 9, 0)),
-                new StockSignalSummaryResponse(102L, "일론 머스크 발언 영향", "변동성 확대", 81.5, 4, LocalDateTime.of(2026, 5, 7, 8, 30))
+                new StockSignalSummaryResponse(
+                        101L, "로보택시 기대감 재점화", "최근 기사 급증",
+                        SignalEventType.PRODUCT, SignalSentiment.POSITIVE, 78,
+                        "로보택시 기대가 투자 심리에 영향을 줄 수 있습니다.",
+                        88.2, 6, LocalDateTime.of(2026, 5, 7, 9, 0)
+                ),
+                new StockSignalSummaryResponse(
+                        102L, "일론 머스크 발언 영향", "변동성 확대",
+                        SignalEventType.MANAGEMENT, SignalSentiment.MIXED, 70,
+                        "CEO 발언에 따른 변동성 확대 여부를 확인해야 합니다.",
+                        81.5, 4, LocalDateTime.of(2026, 5, 7, 8, 30)
+                )
         );
 
         when(stockRepository.existsById(stockId)).thenReturn(true);
@@ -79,6 +91,11 @@ class StockServiceTest {
         assertEquals("테슬라 종합 리포트", response.report());
         assertEquals(2, response.signals().size());
         assertEquals(101L, response.signals().get(0).signalId());
+        assertEquals(SignalEventType.PRODUCT, response.signals().get(0).eventType());
+        assertEquals("제품/사업", response.signals().get(0).eventTypeLabel());
+        assertEquals(SignalSentiment.POSITIVE, response.signals().get(0).sentiment());
+        assertEquals("긍정", response.signals().get(0).sentimentLabel());
+        assertEquals(78, response.signals().get(0).confidence());
         verify(stockReportRepository).findTopByStockIdOrderByGeneratedAtDesc(stockId);
     }
 
