@@ -10,6 +10,8 @@ import com.seo92js.news_alpha_backend.domain.stock.dto.StockSaveRequest;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockKeywordException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.StockNotFoundException;
+import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
+import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportSignalRepository;
@@ -28,6 +30,8 @@ public class StockService {
     private final StockKeywordRepository stockKeywordRepository;
     private final StockReportRepository stockReportRepository;
     private final StockReportSignalRepository stockReportSignalRepository;
+    private final SignalRepository signalRepository;
+    private final SignalEvidenceRepository signalEvidenceRepository;
 
     /**
      * 종목 저장
@@ -100,5 +104,26 @@ public class StockService {
         return stockKeywordRepository.findByStockId(stockId).stream()
                 .map(StockKeywordResponse::from)
                 .toList();
+    }
+
+    /**
+     * 종목 삭제
+     */
+    @Transactional
+    public void delete(Long stockId) {
+        stockReportSignalRepository.deleteByStockReportStockId(stockId);
+        signalEvidenceRepository.deleteBySignalStockId(stockId);
+        stockReportRepository.deleteByStockId(stockId);
+        signalRepository.deleteByStockId(stockId);
+        stockKeywordRepository.deleteByStockId(stockId);
+        stockRepository.deleteById(stockId);
+    }
+
+    /**
+     * 키워드 삭제
+     */
+    @Transactional
+    public void deleteKeyword(Long keywordId) {
+        stockKeywordRepository.deleteById(keywordId);
     }
 }

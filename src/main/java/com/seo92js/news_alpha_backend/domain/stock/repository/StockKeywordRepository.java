@@ -10,4 +10,5 @@ public interface StockKeywordRepository extends JpaRepository<StockKeyword, Long
     List<StockKeyword> findByStockId(Long stockId);
     boolean existsByStockIdAndKeyword(Long stockId, String keyword);
     Optional<StockKeyword> findByStockIdAndKeyword(Long stockId, String keyword);
+    void deleteByStockId(Long stockId);
 }

@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface StockReportRepository extends JpaRepository<StockReport, Long> {
     Optional<StockReport> findTopByStockIdOrderByGeneratedAtDesc(Long stockId);
+    void deleteByStockId(Long stockId);
 }

@@ -48,4 +48,14 @@ public class StockController {
     public List<StockMetaResponse> findAllMeta() {
         return krxStockService.findAll();
     }
+
+    @DeleteMapping("/{stockId}")
+    public void delete(@PathVariable Long stockId) {
+        stockService.delete(stockId);
+    }
+
+    @DeleteMapping("/{stockId}/keywords/{keywordId}")
+    public void deleteKeyword(@PathVariable Long stockId, @PathVariable Long keywordId) {
+        stockService.deleteKeyword(keywordId);
+    }
 }
