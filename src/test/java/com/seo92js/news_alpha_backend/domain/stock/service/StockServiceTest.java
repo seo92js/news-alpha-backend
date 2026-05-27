@@ -64,13 +64,13 @@ class StockServiceTest {
 
         List<StockSignalSummaryResponse> signals = List.of(
                 new StockSignalSummaryResponse(
-                        101L, "로보택시 기대감 재점화", "최근 기사 급증",
+                        stockReport.getId(), 101L, "로보택시 기대감 재점화", "최근 기사 급증",
                         SignalEventType.PRODUCT, SignalSentiment.POSITIVE, 78,
                         "로보택시 기대가 투자 심리에 영향을 줄 수 있습니다.",
                         88.2, 6, LocalDateTime.of(2026, 5, 7, 9, 0)
                 ),
                 new StockSignalSummaryResponse(
-                        102L, "일론 머스크 발언 영향", "변동성 확대",
+                        stockReport.getId(), 102L, "일론 머스크 발언 영향", "변동성 확대",
                         SignalEventType.MANAGEMENT, SignalSentiment.MIXED, 70,
                         "CEO 발언에 따른 변동성 확대 여부를 확인해야 합니다.",
                         81.5, 4, LocalDateTime.of(2026, 5, 7, 8, 30)

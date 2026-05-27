@@ -1,17 +1,14 @@
 package com.seo92js.news_alpha_backend.domain.stock.service;
 
+import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
+import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordResponse;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockKeywordSaveRequest;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockLatestReportResponse;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockResponse;
-import com.seo92js.news_alpha_backend.domain.stock.dto.StockSaveRequest;
+import com.seo92js.news_alpha_backend.domain.stock.StockReport;
+import com.seo92js.news_alpha_backend.domain.stock.dto.*;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockKeywordException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.StockNotFoundException;
-import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
-import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportSignalRepository;
@@ -21,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -103,6 +102,27 @@ public class StockService {
     private List<StockKeywordResponse> findKeywordResponses(Long stockId) {
         return stockKeywordRepository.findByStockId(stockId).stream()
                 .map(StockKeywordResponse::from)
+                .toList();
+    }
+
+    /**
+     * 전체 종목의 최신 시그널 레포트 조회
+     */
+    @Transactional(readOnly = true)
+    public List<StockLatestReportResponse> findLatestReports() {
+        List<StockReport> latestReports = stockReportRepository.findLatestStockReports();
+        if (latestReports.isEmpty()) return List.of();
+
+        List<Long> reportIds = latestReports.stream().map(StockReport::getId).toList();
+        Map<Long, List<StockSignalSummaryResponse>> signalsByStockReportId =
+                stockReportSignalRepository.findSignalSummariesByStockReportIds(reportIds).stream()
+                        .collect(Collectors.groupingBy(StockSignalSummaryResponse::stockReportId));
+
+        return latestReports.stream()
+                .map(report -> StockLatestReportResponse.from(
+                        report,
+                        signalsByStockReportId.getOrDefault(report.getId(), List.of())
+                ))
                 .toList();
     }
 

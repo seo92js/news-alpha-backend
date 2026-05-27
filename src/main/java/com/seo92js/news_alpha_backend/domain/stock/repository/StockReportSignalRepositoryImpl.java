@@ -20,6 +20,7 @@ public class StockReportSignalRepositoryImpl implements StockReportSignalReposit
         return queryFactory
                 .select(Projections.constructor(
                         StockSignalSummaryResponse.class,
+                        stockReportSignal.stockReport.id,
                         signal.id,
                         signal.title,
                         signal.summary,
@@ -34,6 +35,30 @@ public class StockReportSignalRepositoryImpl implements StockReportSignalReposit
                 .from(stockReportSignal)
                 .join(stockReportSignal.signal, signal)
                 .where(stockReportSignal.stockReport.id.eq(stockReportId))
+                .orderBy(stockReportSignal.rankOrder.asc())
+                .fetch();
+    }
+
+    @Override
+    public List<StockSignalSummaryResponse> findSignalSummariesByStockReportIds(List<Long> stockReportIds) {
+        return queryFactory
+                .select(Projections.constructor(
+                        StockSignalSummaryResponse.class,
+                        stockReportSignal.stockReport.id,
+                        signal.id,
+                        signal.title,
+                        signal.summary,
+                        signal.eventType,
+                        signal.sentiment,
+                        signal.confidence,
+                        signal.investorSummary,
+                        signal.score,
+                        signal.relatedNewsCount,
+                        signal.detectedAt
+                ))
+                .from(stockReportSignal)
+                .join(stockReportSignal.signal, signal)
+                .where(stockReportSignal.stockReport.id.in(stockReportIds))
                 .orderBy(stockReportSignal.rankOrder.asc())
                 .fetch();
     }

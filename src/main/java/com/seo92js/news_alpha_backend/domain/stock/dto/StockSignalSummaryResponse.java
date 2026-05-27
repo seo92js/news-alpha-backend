@@ -6,6 +6,7 @@ import com.seo92js.news_alpha_backend.domain.signal.SignalSentiment;
 import java.time.LocalDateTime;
 
 public record StockSignalSummaryResponse(
+        Long stockReportId,
         Long signalId,
         String title,
         String summary,
@@ -20,6 +21,7 @@ public record StockSignalSummaryResponse(
         LocalDateTime detectedAt
 ) {
     public StockSignalSummaryResponse(
+            Long stockReportId,
             Long signalId,
             String title,
             String summary,
@@ -32,6 +34,7 @@ public record StockSignalSummaryResponse(
             LocalDateTime detectedAt
     ) {
         this(
+                stockReportId,
                 signalId,
                 title,
                 summary,

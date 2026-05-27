@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface StockReportRepository extends JpaRepository<StockReport, Long> {
+public interface StockReportRepository extends JpaRepository<StockReport, Long>, StockReportRepositoryCustom {
     Optional<StockReport> findTopByStockIdOrderByGeneratedAtDesc(Long stockId);
     void deleteByStockId(Long stockId);
 }

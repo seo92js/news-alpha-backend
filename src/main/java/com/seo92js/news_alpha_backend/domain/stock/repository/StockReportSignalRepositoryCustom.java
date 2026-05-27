@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface StockReportSignalRepositoryCustom {
     List<StockSignalSummaryResponse> findSignalSummariesByStockReportId(Long stockReportId);
+    List<StockSignalSummaryResponse> findSignalSummariesByStockReportIds(List<Long> stockReportIds);
 }
