@@ -7,6 +7,8 @@ import com.seo92js.news_alpha_backend.domain.news.repository.NewsRepository;
 import com.seo92js.news_alpha_backend.domain.signal.Signal;
 import com.seo92js.news_alpha_backend.domain.signal.SignalEventType;
 import com.seo92js.news_alpha_backend.domain.signal.SignalSentiment;
+import com.seo92js.news_alpha_backend.domain.signal.SignalType;
+import com.seo92js.news_alpha_backend.domain.signal.dto.SignalEvidenceRow;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
@@ -34,6 +36,8 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
@@ -69,10 +73,11 @@ class SignalDetectionServiceTest {
                 signalRepository,
                 signalEvidenceRepository,
                 signalAnalysisService,
+                new SignalSimilarityPolicy(),
                 transactionTemplate
         );
 
-        doAnswer(invocation -> {
+        lenient().doAnswer(invocation -> {
             Consumer<TransactionStatus> action = invocation.getArgument(0);
             action.accept(null);
             return null;
@@ -87,6 +92,7 @@ class SignalDetectionServiceTest {
                 .toList();
 
         when(signalRepository.findExistingSignalKeys(anyCollection())).thenReturn(Set.of());
+        when(signalRepository.findRecentSignalsByStockId(anyLong(), any(), any())).thenReturn(List.of());
         when(vectorStoreService.similaritySearch(anyString(), anyInt(), anyDouble()))
                 .thenReturn(List.of(document(5), document(6)))
                 .thenReturn(List.of(document(7), document(8)))
@@ -114,6 +120,7 @@ class SignalDetectionServiceTest {
                 .toList();
 
         when(signalRepository.findExistingSignalKeys(anyCollection())).thenReturn(Set.of());
+        when(signalRepository.findRecentSignalsByStockId(anyLong(), any(), any())).thenReturn(List.of());
         when(vectorStoreService.similaritySearch(anyString(), anyInt(), anyDouble()))
                 .thenReturn(List.of(document(3), document(4)))
                 .thenReturn(List.of(document(3), document(4)));
@@ -129,6 +136,46 @@ class SignalDetectionServiceTest {
                 .analyze(any(), anyString(), anyString(), anyString(), anyInt(), anyLong(), any());
         verify(signalRepository, times(1)).save(any(Signal.class));
         verify(signalEvidenceRepository, times(1)).saveAll(any());
+    }
+
+    @Test
+    void 최근_유사_시그널이_이미_있으면_새_시그널을_저장하지_않는다() {
+        Stock stock = stock();
+        List<News> discoveredNews = LongStream.rangeClosed(1, 3)
+                .mapToObj(id -> news(id, true))
+                .toList();
+        Signal existingSignal = signal(
+                stock,
+                "미·이란 종전 합의에 따른 증시 불안 해소 및 SK하이닉스 주가 급등",
+                "지정학적 리스크 완화로 코스피와 반도체 대형주가 상승"
+        );
+        ReflectionTestUtils.setField(existingSignal, "id", 99L);
+
+        when(signalRepository.findExistingSignalKeys(anyCollection())).thenReturn(Set.of());
+        when(vectorStoreService.similaritySearch(anyString(), anyInt(), anyDouble()))
+                .thenReturn(List.of(document(2), document(3)))
+                .thenReturn(List.of(document(1), document(3)))
+                .thenReturn(List.of(document(1), document(2)));
+        when(signalRepository.findRecentSignalsByStockId(anyLong(), any(), any()))
+                .thenReturn(List.of(existingSignal));
+        when(signalEvidenceRepository.findEvidenceRowsBySignalIds(List.of(99L)))
+                .thenReturn(List.of(
+                        new SignalEvidenceRow(
+                                99L,
+                                1L,
+                                1,
+                                "기존 근거 기사",
+                                "https://example.com/1",
+                                LocalDateTime.now()
+                        )
+                ));
+
+        signalDetectionService.detect(stock, "엔비디아", discoveredNews);
+
+        verify(signalAnalysisService, never())
+                .analyze(any(), anyString(), anyString(), anyString(), anyInt(), anyLong(), any());
+        verify(signalRepository, never()).save(any(Signal.class));
+        verify(signalEvidenceRepository, never()).saveAll(any());
     }
 
     private Stock stock() {
@@ -162,6 +209,26 @@ class SignalDetectionServiceTest {
                         NewsMetadata.Keys.URL, "https://news.example.com/" + newsId,
                         NewsMetadata.Keys.PUBLISHED_AT, LocalDateTime.now().toString()
                 )
+        );
+    }
+
+    private Signal signal(Stock stock, String title, String summary) {
+        return Signal.of(
+                "existing-key",
+                stock,
+                SignalType.EMERGING_CLUSTER,
+                "하이닉스",
+                title,
+                summary,
+                SignalEventType.MARKET,
+                SignalSentiment.POSITIVE,
+                90,
+                summary,
+                92.5,
+                5,
+                LocalDateTime.now().minusHours(1),
+                LocalDateTime.now(),
+                LocalDateTime.now()
         );
     }
 

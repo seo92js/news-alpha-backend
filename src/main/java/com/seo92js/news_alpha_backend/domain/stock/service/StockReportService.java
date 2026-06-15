@@ -2,7 +2,10 @@ package com.seo92js.news_alpha_backend.domain.stock.service;
 
 import com.seo92js.news_alpha_backend.domain.ai.service.AiService;
 import com.seo92js.news_alpha_backend.domain.signal.Signal;
+import com.seo92js.news_alpha_backend.domain.signal.dto.SignalEvidenceRow;
+import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
+import com.seo92js.news_alpha_backend.domain.signal.service.SignalSimilarityPolicy;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockReport;
 import com.seo92js.news_alpha_backend.domain.stock.StockReportSignal;
@@ -20,8 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -36,9 +41,24 @@ public class StockReportService {
     private static final int MAX_SIGNALS = 5;
 
     /**
+     * 리포트 후보는 넉넉히 가져온 뒤 중복 이슈를 제거하고 상위 5개만 사용
+     */
+    private static final int REPORT_CANDIDATE_SIGNAL_LIMIT = 20;
+
+    /**
      * 종목 리포트 생성 시 참고할 최근 시그널 조회 기간
      */
     private static final int SIGNAL_LOOKBACK_HOURS = 24;
+
+    /**
+     * 리포트 안에서 같은 사건으로 볼 제목/요약 토큰 overlap 기준
+     */
+    private static final double REPORT_TEXT_OVERLAP_THRESHOLD = 0.40d;
+
+    /**
+     * 리포트 안에서 같은 사건으로 볼 근거 뉴스 overlap 기준
+     */
+    private static final double REPORT_EVIDENCE_OVERLAP_THRESHOLD = 0.35d;
 
     /**
      * LLM 프롬프트에 넣을 탐지 시각 출력 형식
@@ -47,6 +67,8 @@ public class StockReportService {
 
     private final AiService aiService;
     private final SignalRepository signalRepository;
+    private final SignalEvidenceRepository signalEvidenceRepository;
+    private final SignalSimilarityPolicy signalSimilarityPolicy;
     private final StockReportRepository stockReportRepository;
     private final StockReportSignalRepository stockReportSignalRepository;
 
@@ -58,11 +80,12 @@ public class StockReportService {
      */
     @Transactional
     public void generateLatestReport(Stock stock) {
-        List<Signal> signals = signalRepository.findRecentSignalsByStockId(
+        List<Signal> candidateSignals = signalRepository.findRecentSignalsByStockId(
                 stock.getId(),
                 LocalDateTime.now().minusHours(SIGNAL_LOOKBACK_HOURS),
-                PageRequest.of(0, MAX_SIGNALS)
+                PageRequest.of(0, REPORT_CANDIDATE_SIGNAL_LIMIT)
         );
+        List<Signal> signals = selectRepresentativeSignals(candidateSignals);
 
         if (signals.isEmpty()) {
             return;
@@ -86,6 +109,67 @@ public class StockReportService {
                 IntStream.range(0, signals.size())
                         .mapToObj(index -> StockReportSignal.of(stockReport, signals.get(index), index + 1))
                         .toList()
+        );
+    }
+
+    private List<Signal> selectRepresentativeSignals(List<Signal> candidateSignals) {
+        if (candidateSignals.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, Set<Long>> evidenceNewsIdsBySignalId = signalEvidenceRepository.findEvidenceRowsBySignalIds(
+                        candidateSignals.stream().map(Signal::getId).toList()
+                )
+                .stream()
+                .collect(Collectors.groupingBy(
+                        SignalEvidenceRow::signalId,
+                        Collectors.mapping(SignalEvidenceRow::newsId, Collectors.toSet())
+                ));
+
+        List<Signal> selected = new ArrayList<>();
+        for (Signal candidate : candidateSignals) {
+            if (selected.size() >= MAX_SIGNALS) {
+                break;
+            }
+            if (isDuplicateReportSignal(selected, candidate, evidenceNewsIdsBySignalId)) {
+                continue;
+            }
+            selected.add(candidate);
+        }
+        return selected;
+    }
+
+    private boolean isDuplicateReportSignal(
+            List<Signal> selected,
+            Signal candidate,
+            Map<Long, Set<Long>> evidenceNewsIdsBySignalId
+    ) {
+        Set<Long> candidateNewsIds = evidenceNewsIdsBySignalId.getOrDefault(candidate.getId(), Set.of());
+        String candidateText = toComparableText(candidate);
+
+        return selected.stream()
+                .anyMatch(existingSignal -> {
+                    if (signalSimilarityPolicy.hasNewsOverlap(
+                            candidateNewsIds,
+                            evidenceNewsIdsBySignalId.getOrDefault(existingSignal.getId(), Set.of()),
+                            REPORT_EVIDENCE_OVERLAP_THRESHOLD
+                    )) {
+                        return true;
+                    }
+
+                    return signalSimilarityPolicy.isTextSimilar(
+                            candidateText,
+                            toComparableText(existingSignal),
+                            REPORT_TEXT_OVERLAP_THRESHOLD
+                    );
+                });
+    }
+
+    private String toComparableText(Signal signal) {
+        return "%s %s %s".formatted(
+                signal.getTitle(),
+                signal.getSummary(),
+                signal.getInvestorSummary() == null ? "" : signal.getInvestorSummary()
         );
     }
 

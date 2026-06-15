@@ -13,6 +13,7 @@ import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -84,11 +85,34 @@ public class SignalDetectionService {
      */
     private static final int ANALYSIS_NEWS_PREVIEW_MAX_LENGTH = 300;
 
+    /**
+     * 저장 직전 같은 종목의 최근 시그널과 비교할 조회 범위
+     * 키워드가 달라도 같은 사건이면 새 시그널로 저장하지 않기 위함
+     */
+    private static final int DUPLICATE_LOOKBACK_HOURS = 24;
+
+    /**
+     * 저장 직전 비교할 최근 시그널 최대 수
+     */
+    private static final int DUPLICATE_COMPARE_LIMIT = 30;
+
+    /**
+     * 제목/요약 토큰이 이 비율 이상 겹치면 같은 사건으로 판단
+     */
+    private static final double TEXT_OVERLAP_THRESHOLD = 0.40d;
+
+    /**
+     * 정확한 근거 뉴스가 이 비율 이상 겹치면 같은 사건으로 판단
+     * 서로 다른 매체의 같은 이슈 기사가 많아질 수 있어 리포트 후보 overlap보다 낮게 둠
+     */
+    private static final double RECENT_EVIDENCE_OVERLAP_THRESHOLD = 0.35d;
+
     private final VectorStoreService vectorStoreService;
     private final NewsRepository newsRepository;
     private final SignalRepository signalRepository;
     private final SignalEvidenceRepository signalEvidenceRepository;
     private final SignalAnalysisService signalAnalysisService;
+    private final SignalSimilarityPolicy signalSimilarityPolicy;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -121,6 +145,15 @@ public class SignalDetectionService {
         }
 
         selectSignalCandidates(candidates).forEach(candidate -> {
+            if (hasSimilarRecentSignal(stock, toComparableText(candidate), toNewsIds(candidate.cluster()))) {
+                log.info(
+                        "유사한 최근 시그널이 있어 저장 스킵. stockId={}, keyword={}, title={}",
+                        stock.getId(),
+                        keyword,
+                        candidate.defaultTitle()
+                );
+                return;
+            }
             Signal signal = createSignal(stock, keyword, candidate);
             transactionTemplate.executeWithoutResult(status -> {
                 Signal savedSignal = signalRepository.save(signal);
@@ -234,6 +267,67 @@ public class SignalDetectionService {
             return 0d;
         }
         return (double) intersectionCount / smallerClusterSize;
+    }
+
+    /**
+     * 키워드가 달라도 같은 종목에서 최근에 이미 저장된 의미상 유사 시그널은 중복 저장하지 않음
+     */
+    private boolean hasSimilarRecentSignal(Stock stock, String comparableText, Set<Long> candidateNewsIds) {
+        List<Signal> recentSignals = signalRepository.findRecentSignalsByStockId(
+                stock.getId(),
+                LocalDateTime.now().minusHours(DUPLICATE_LOOKBACK_HOURS),
+                PageRequest.of(0, DUPLICATE_COMPARE_LIMIT)
+        );
+        if (recentSignals.isEmpty()) {
+            return false;
+        }
+
+        Map<Long, Set<Long>> evidenceNewsIdsBySignalId = signalEvidenceRepository.findEvidenceRowsBySignalIds(
+                        recentSignals.stream().map(Signal::getId).toList()
+                )
+                .stream()
+                .collect(Collectors.groupingBy(
+                        row -> row.signalId(),
+                        Collectors.mapping(row -> row.newsId(), Collectors.toSet())
+                ));
+
+        return recentSignals.stream()
+                .anyMatch(existingSignal -> {
+                    if (signalSimilarityPolicy.hasNewsOverlap(
+                            candidateNewsIds,
+                            evidenceNewsIdsBySignalId.getOrDefault(existingSignal.getId(), Set.of()),
+                            RECENT_EVIDENCE_OVERLAP_THRESHOLD
+                    )) {
+                        return true;
+                    }
+
+                    return signalSimilarityPolicy.isTextSimilar(
+                            comparableText,
+                            toComparableText(existingSignal),
+                            TEXT_OVERLAP_THRESHOLD
+                    );
+                });
+    }
+
+    private Set<Long> toNewsIds(List<ClusteredNews> cluster) {
+        return cluster.stream()
+                .map(ClusteredNews::newsId)
+                .collect(Collectors.toSet());
+    }
+
+    private String toComparableText(SignalCandidate candidate) {
+        String clusterText = candidate.cluster().stream()
+                .map(item -> item.title() + " " + item.preview())
+                .collect(Collectors.joining(" "));
+        return "%s %s %s".formatted(candidate.defaultTitle(), candidate.defaultSummary(), clusterText);
+    }
+
+    private String toComparableText(Signal signal) {
+        return "%s %s %s".formatted(
+                signal.getTitle(),
+                signal.getSummary(),
+                signal.getInvestorSummary() == null ? "" : signal.getInvestorSummary()
+        );
     }
 
     /**
@@ -386,9 +480,9 @@ public class SignalDetectionService {
      */
     private double calculateScore(int clusterSize, long burstCount, LocalDateTime lastPublishedAt) {
         long ageMinutes = Math.max(0, Duration.between(lastPublishedAt, LocalDateTime.now()).toMinutes());
-        double volumeScore = Math.min(55d, clusterSize * 15d);
-        double burstScore = Math.min(25d, burstCount * 8d);
-        double freshnessScore = Math.max(5d, 25d - (ageMinutes / 15d));
+        double volumeScore = Math.min(40d, Math.log1p(clusterSize) * 18d);
+        double burstScore = Math.min(30d, Math.log1p(burstCount) * 16d);
+        double freshnessScore = Math.max(5d, 25d - (ageMinutes / 20d));
         return Math.round(Math.min(100d, volumeScore + burstScore + freshnessScore) * 10d) / 10d;
     }
 
