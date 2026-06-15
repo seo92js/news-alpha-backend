@@ -1,5 +1,6 @@
 package com.seo92js.news_alpha_backend.domain.stock.service;
 
+import com.seo92js.news_alpha_backend.domain.ai.service.AiService;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalEvidenceRepository;
 import com.seo92js.news_alpha_backend.domain.signal.repository.SignalRepository;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
@@ -16,6 +17,7 @@ import com.seo92js.news_alpha_backend.domain.stock.repository.StockRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -31,18 +33,35 @@ public class StockService {
     private final StockReportSignalRepository stockReportSignalRepository;
     private final SignalRepository signalRepository;
     private final SignalEvidenceRepository signalEvidenceRepository;
+    private final AiService aiService;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 종목 저장
      */
-    @Transactional
     public StockResponse save(StockSaveRequest request) {
         if (stockRepository.existsByTickerAndMarket(request.ticker(), request.market())) {
             throw new DuplicateStockException(request.ticker(), request.market());
         }
 
-        Stock stock = stockRepository.save(Stock.of(request.ticker(), request.name(), request.market()));
-        return StockResponse.from(stock, List.of());
+        Stock tempStock = Stock.of(request.ticker(), request.name(), request.market());
+
+        // DB 커넥션 미점
+        List<String> autoKeywords = aiService.generateKeywordsForStock(tempStock);
+
+        // 외부 통신 성공 시에만 영속화
+        return transactionTemplate.execute(status -> {
+            if (stockRepository.existsByTickerAndMarket(request.ticker(), request.market())) {
+                throw new DuplicateStockException(request.ticker(), request.market());
+            }
+
+            Stock stock = stockRepository.save(tempStock);
+            for (String keyword : autoKeywords) {
+                stockKeywordRepository.save(StockKeyword.of(stock, keyword));
+            }
+
+            return StockResponse.from(stock, findKeywordResponses(stock.getId()));
+        });
     }
 
     /**

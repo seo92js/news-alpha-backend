@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.ObjectUtils;
 
 import java.util.ArrayList;
@@ -24,12 +25,13 @@ public class KrxStockService {
 
     private final KrxStockClient krxStockClient;
     private final KrxStockRepository krxStockRepository;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * 전 종목 meta 정보 upsert
      */
-    @Transactional
     public void syncAllStockInfo(String baseDate) {
+        // DB 커넥션 미점유
         List<KrxStockItem> items = krxStockClient.fetch(baseDate);
 
         if (ObjectUtils.isEmpty(items)) {
@@ -37,30 +39,31 @@ public class KrxStockService {
             return;
         }
 
-        List<String> tickers = items.stream()
-                .map(KrxStockItem::ticker)
-                .toList();
-        Map<String, KrxStock> existingByTicker = krxStockRepository.findAllByTickerIn(tickers)
-                .stream()
-                .collect(Collectors.toMap(KrxStock::getTicker, Function.identity()));
+        // 통신 성공 시에만
+        transactionTemplate.executeWithoutResult(status -> {
+            List<String> tickers = items.stream()
+                    .map(KrxStockItem::ticker)
+                    .toList();
+            Map<String, KrxStock> existingByTicker = krxStockRepository.findAllByTickerIn(tickers)
+                    .stream()
+                    .collect(Collectors.toMap(KrxStock::getTicker, Function.identity()));
 
-        List<KrxStock> toInsert = new ArrayList<>();
+            List<KrxStock> toInsert = new ArrayList<>();
 
-        for (KrxStockItem item : items) {
-            KrxStock existing = existingByTicker.get(item.ticker());
-            if (ObjectUtils.isEmpty(existing)) {
-
-                toInsert.add(KrxStock.of(item.baseDate(), item.ticker(), item.isinCode(), item.market(), item.name()
-                        , item.corpRegNo(), item.corpName()));
+            for (KrxStockItem item : items) {
+                KrxStock existing = existingByTicker.get(item.ticker());
+                if (ObjectUtils.isEmpty(existing)) {
+                    toInsert.add(KrxStock.of(item.baseDate(), item.ticker(), item.isinCode(), item.market(), item.name()
+                            , item.corpRegNo(), item.corpName()));
+                }
+                else {
+                    existing.update(item.baseDate(), item.isinCode(), item.market(), item.name(), item.corpRegNo()
+                            , item.corpName());
+                }
             }
-            else {
 
-                existing.update(item.baseDate(), item.isinCode(), item.market(), item.name(), item.corpRegNo()
-                        , item.corpName());
-            }
-        }
-
-        if (!toInsert.isEmpty()) krxStockRepository.saveAll(toInsert);
+            if (!toInsert.isEmpty()) krxStockRepository.saveAll(toInsert);
+        });
 
         log.info("종목 정보 현행화 완료 | 기준일자: {}, 처리건수: {}", baseDate, items.size());
     }

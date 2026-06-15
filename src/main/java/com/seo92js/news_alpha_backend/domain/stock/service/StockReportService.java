@@ -18,7 +18,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -71,6 +71,7 @@ public class StockReportService {
     private final SignalSimilarityPolicy signalSimilarityPolicy;
     private final StockReportRepository stockReportRepository;
     private final StockReportSignalRepository stockReportSignalRepository;
+    private final TransactionTemplate transactionTemplate;
 
     @Value("classpath:/prompts/stock-report.st")
     private Resource stockReportPromptResource;
@@ -78,27 +79,34 @@ public class StockReportService {
     /**
      * 종목에 연결된 최근 시그널들을 모아 종목별 종합 리포트 스냅샷을 새로 생성
      */
-    @Transactional
     public void generateLatestReport(Stock stock) {
-        List<Signal> candidateSignals = signalRepository.findRecentSignalsByStockId(
-                stock.getId(),
-                LocalDateTime.now().minusHours(SIGNAL_LOOKBACK_HOURS),
-                PageRequest.of(0, REPORT_CANDIDATE_SIGNAL_LIMIT)
-        );
-        List<Signal> signals = selectRepresentativeSignals(candidateSignals);
+        List<Signal> signals = transactionTemplate.execute(status -> {
+            List<Signal> candidateSignals = signalRepository.findRecentSignalsByStockId(
+                    stock.getId(),
+                    LocalDateTime.now().minusHours(SIGNAL_LOOKBACK_HOURS),
+                    PageRequest.of(0, REPORT_CANDIDATE_SIGNAL_LIMIT)
+            );
+            return selectRepresentativeSignals(candidateSignals);
+        });
 
-        if (signals.isEmpty()) {
+        if (signals == null || signals.isEmpty()) {
             return;
         }
 
         try {
             LocalDateTime generatedAt = LocalDateTime.now();
             LocalDate reportDate = generatedAt.toLocalDate();
+
+            // DB 커넥션 미점유
             String report = aiService.chat(buildPrompt(stock, reportDate, signals));
-            StockReport savedStockReport = stockReportRepository.save(
-                    StockReport.of(stock, reportDate, signals.size(), report, generatedAt)
-            );
-            saveReportSignals(savedStockReport, signals);
+
+            // 통신 성공 시에만
+            transactionTemplate.executeWithoutResult(status -> {
+                StockReport savedStockReport = stockReportRepository.save(
+                        StockReport.of(stock, reportDate, signals.size(), report, generatedAt)
+                );
+                saveReportSignals(savedStockReport, signals);
+            });
         } catch (Exception e) {
             log.warn("종목 리포트 생성에 실패했습니다. stockId={}, stock={}", stock.getId(), stock.getName(), e);
         }

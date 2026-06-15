@@ -22,7 +22,8 @@ public class NewsPipelineService {
      * StockKeyword 기준으로 뉴스 수집, 신규 뉴스 임베딩 저장, 발견 뉴스 기반 시그널 탐지를 순서대로 실행
      */
     public List<News> collectEmbedAndDetect(StockKeyword stockKeyword) {
-        CollectedNewsResult collectedNews = newsService.collectNews(stockKeyword.getKeyword());
+        String combinedQuery = stockKeyword.getStock().getName() + " " + stockKeyword.getKeyword();
+        CollectedNewsResult collectedNews = newsService.collectNews(combinedQuery);
         if (collectedNews.discoveredNews().isEmpty()) {
             return collectedNews.discoveredNews();
         }

@@ -7,16 +7,16 @@ import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordReposi
 import com.seo92js.news_alpha_backend.domain.stock.service.StockReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 @Component
-@Profile("prod")
+//@Profile("prod")
 @RequiredArgsConstructor
 @Slf4j
 public class NewsAnalysisScheduler {
@@ -29,6 +29,11 @@ public class NewsAnalysisScheduler {
     private final StockKeywordRepository stockKeywordRepository;
     private final NewsPipelineService newsPipelineService;
     private final StockReportService stockReportService;
+
+    @PostConstruct
+    public void init() {
+        runStockAnalysisPipeline();
+    }
 
     /**
      * StockKeyword 기준 수집부터 StockReport 생성까지 종목 뉴스 분석 파이프라인 실행

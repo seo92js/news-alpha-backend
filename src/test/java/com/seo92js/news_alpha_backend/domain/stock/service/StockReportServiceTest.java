@@ -23,15 +23,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -53,6 +58,9 @@ class StockReportServiceTest {
     @Mock
     private StockReportSignalRepository stockReportSignalRepository;
 
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     private StockReportService stockReportService;
 
     @BeforeEach
@@ -63,7 +71,8 @@ class StockReportServiceTest {
                 signalEvidenceRepository,
                 new SignalSimilarityPolicy(),
                 stockReportRepository,
-                stockReportSignalRepository
+                stockReportSignalRepository,
+                transactionTemplate
         );
         ReflectionTestUtils.setField(
                 stockReportService,
@@ -76,6 +85,17 @@ class StockReportServiceTest {
     void 리포트_생성시_의미상_중복_시그널은_대표_시그널만_선택한다() {
         Stock stock = Stock.of("A000660", "SK하이닉스", "KOSPI");
         ReflectionTestUtils.setField(stock, "id", 1L);
+
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(null);
+        });
+
+        doAnswer(invocation -> {
+            Consumer<TransactionStatus> callback = invocation.getArgument(0);
+            callback.accept(null);
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
 
         Signal firstMacroSignal = signal(
                 1L,

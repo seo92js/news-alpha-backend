@@ -4,6 +4,7 @@ import com.seo92js.news_alpha_backend.common.exception.ApiFetchException;
 import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 import com.seo92js.news_alpha_backend.domain.news.dto.NaverNewsResponse;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,7 +14,12 @@ public class NaverNewsClient {
     private final RestClient restClient;
 
     public NaverNewsClient() {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(5000);
+
         this.restClient = RestClient.builder()
+                .requestFactory(requestFactory)
                 .baseUrl("https://openapi.naver.com")
                 .build();
     }
