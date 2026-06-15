@@ -71,7 +71,13 @@ public class NewsDocumentService {
     private List<Document> newsToDocument(News news) {
         if (news.getContent() == null || news.getContent().isBlank()) return List.of();
 
-        List<Sentence> sentences = sentenceSplitter.splitBySentence(news.getContent());
+        String content = news.getContent();
+        // 3000자가 넘어가는 초장문 뉴스의 경우 임베딩 리소스 낭비를 막기 위해 상단부 3000자만 절삭하여 사용
+        if (content.length() > 3000) {
+            content = content.substring(0, 3000);
+        }
+
+        List<Sentence> sentences = sentenceSplitter.splitBySentence(content);
 
         List<Sentence> filteredNoise = sentences.stream()
                 .filter(s -> isNotNoise(s.text()))
