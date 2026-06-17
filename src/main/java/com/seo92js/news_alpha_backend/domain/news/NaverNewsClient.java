@@ -32,7 +32,7 @@ public class NaverNewsClient {
                 .uri(uriBuilder -> uriBuilder
                         .path("/v1/search/news.json")
                         .queryParam("query", keyword)
-                        .queryParam("display", 100)
+                        .queryParam("display", 30)
                         .queryParam("sort", "date")
                         .build())
                 .header("X-Naver-Client-Id", clientId)

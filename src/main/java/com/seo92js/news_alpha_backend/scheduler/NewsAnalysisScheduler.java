@@ -1,5 +1,6 @@
 package com.seo92js.news_alpha_backend.scheduler;
 
+import com.seo92js.news_alpha_backend.domain.news.News;
 import com.seo92js.news_alpha_backend.domain.news.service.NewsPipelineService;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
@@ -11,9 +12,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 @Profile("prod")
@@ -42,11 +41,22 @@ public class NewsAnalysisScheduler {
         }
 
         Set<Stock> processedStocks = new HashSet<>();
+        Map<Stock, List<News>> accumulatedNewsByStock = new HashMap<>();
 
         for (StockKeyword stockKeyword : stockKeywords) {
+            Stock stock = stockKeyword.getStock();
             try {
-                newsPipelineService.collectEmbedAndDetect(stockKeyword);
-                processedStocks.add(stockKeyword.getStock());
+                // 종목을 처음 발견한 시점에 종목명 단독 기본 수집 쿼리 실행 (포괄성 확보)
+                if (processedStocks.add(stock)) {
+                    log.info("종목 기본 수집 쿼리 가동: stock={}", stock.getName());
+                    StockKeyword defaultKeyword = StockKeyword.of(stock, "");
+                    List<News> defaultNews = newsPipelineService.collectAndEmbed(defaultKeyword);
+                    accumulatedNewsByStock.computeIfAbsent(stock, k -> new ArrayList<>()).addAll(defaultNews);
+                    Thread.sleep(NEWS_COLLECTION_DELAY_MILLIS);
+                }
+
+                List<News> keywordNews = newsPipelineService.collectAndEmbed(stockKeyword);
+                accumulatedNewsByStock.computeIfAbsent(stock, k -> new ArrayList<>()).addAll(keywordNews);
 
                 // IP 차단 방지를 위한 딜레이
                 Thread.sleep(NEWS_COLLECTION_DELAY_MILLIS);
@@ -56,7 +66,7 @@ public class NewsAnalysisScheduler {
             } catch (Exception e) {
                 log.warn(
                         "종목 뉴스 분석 파이프라인 실행에 실패했습니다. stockId={}, keyword={}",
-                        stockKeyword.getStock().getId(),
+                        stock.getId(),
                         stockKeyword.getKeyword(),
                         e
                 );
@@ -65,9 +75,24 @@ public class NewsAnalysisScheduler {
 
         for (Stock stock : processedStocks) {
             try {
+                List<News> allNewsForStock = accumulatedNewsByStock.getOrDefault(stock, List.of());
+                
+                // 중복 발견된 뉴스 ID 제거
+                List<News> uniqueNews = new ArrayList<>();
+                Set<Long> seenIds = new HashSet<>();
+                for (News n : allNewsForStock) {
+                    if (n.getId() != null && seenIds.add(n.getId())) {
+                        uniqueNews.add(n);
+                    }
+                }
+
+                // 종목별 수집 완료된 모든 뉴스를 기반으로 일괄 시그널 탐지
+                newsPipelineService.detectSignals(stock, uniqueNews);
+
+                // 종목 리포트 생성
                 stockReportService.generateLatestReport(stock);
             } catch (Exception e) {
-                log.warn("종목 리포트 생성에 실패했습니다. stockId={}, stock={}", stock.getId(), stock.getName(), e);
+                log.warn("종목 리포트 생성 및 시그널 탐지에 실패했습니다. stockId={}, stock={}", stock.getId(), stock.getName(), e);
             }
         }
     }

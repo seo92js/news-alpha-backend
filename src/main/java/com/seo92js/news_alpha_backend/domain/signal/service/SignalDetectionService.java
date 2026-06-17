@@ -41,7 +41,7 @@ public class SignalDetectionService {
      * seed 뉴스 1건으로 유사도 검색 시 가져올 최대 chunk 수
      * 너무 작으면 관련 뉴스를 놓치고, 너무 크면 비용과 중복 후보가 늘어남
      */
-    private static final int SIMILAR_TOP_K = 12;
+    private static final int SIMILAR_TOP_K = 6;
 
     /**
      * 벡터 검색 결과를 같은 이슈 군집으로 볼 최소 유사도
@@ -501,7 +501,10 @@ public class SignalDetectionService {
         if (news.getDescription() != null && !news.getDescription().isBlank()) {
             return truncate(news.getDescription(), ANALYSIS_NEWS_PREVIEW_MAX_LENGTH);
         }
-        return truncate(news.getContent(), ANALYSIS_NEWS_PREVIEW_MAX_LENGTH);
+        if (news.getContent() != null && !news.getContent().isBlank()) {
+            return truncate(news.getContent(), ANALYSIS_NEWS_PREVIEW_MAX_LENGTH);
+        }
+        return "";
     }
 
     private String truncate(String value, int maxLength) {

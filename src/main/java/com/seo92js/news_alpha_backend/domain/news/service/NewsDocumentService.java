@@ -4,9 +4,6 @@ import com.seo92js.news_alpha_backend.common.AppConstants;
 import com.seo92js.news_alpha_backend.domain.ai.dto.NewsMetadata;
 import com.seo92js.news_alpha_backend.domain.ai.service.VectorStoreService;
 import com.seo92js.news_alpha_backend.domain.news.News;
-import com.seo92js.news_alpha_backend.domain.news.Sentence;
-import com.seo92js.news_alpha_backend.domain.news.segment.NewsChunker;
-import com.seo92js.news_alpha_backend.domain.news.segment.SentenceSplitter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.document.Document;
@@ -16,93 +13,64 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NewsDocumentService {
 
-    private final SentenceSplitter sentenceSplitter;
-    private final NewsChunker newsChunker;
     private final VectorStoreService vectorStoreService;
 
     /**
-     * 이 문자열로 시작하면 저작권/출처 문구로 보고 임베딩 대상에서 제외
-     */
-    private static final List<String> NOISE_START_PATTERNS = List.of("◎", "ⓒ", "저작권자");
-
-    /**
-     * 문장 중간에 포함되면 기자 이메일, 재배포 금지 문구 등으로 보고 제외
-     */
-    private static final List<String> NOISE_CONTAIN_PATTERNS = List.of("무단전재", "재배포 금지", "@");
-
-    /**
-     * 문장 전체가 정확히 일치하면 광고/시스템 문구로 보고 제외
-     */
-    private static final List<String> NOISE_EXACT_PATTERNS = List.of("ADVERTISEMENT");
-
-    /**
-     * 저장된 뉴스 목록을 청킹 후 벡터 스토어에 임베딩 문서로 저장
+     * 저장된 뉴스 목록을 기사당 단 1개의 대표 청크(제목 + 요약)로 임베딩하여 벡터 스토어에 저장
      */
     public void process(List<News> newsList) {
         if (newsList.isEmpty()) return;
 
         for (News news : newsList) {
-
             List<Document> documents = newsToDocument(news);
             if (documents.isEmpty()) continue;
 
             try {
-
                 vectorStoreService.save(documents);
-
-            }
-            catch (Exception e) {
-
+            } catch (Exception e) {
                 log.warn("벡터 변환 및 저장에 실패했습니다. 키워드 : {}", news.getKeyword(), e);
             }
         }
     }
 
     /**
-     * 뉴스 본문을 문장 분리, 노이즈 제거, 청킹하여 벡터 저장용 Document 목록으로 변환
+     * 뉴스 제목(Title)과 요약(Description)만 결합해 단 1개의 대표 청크 Document 생성
      */
     private List<Document> newsToDocument(News news) {
-        if (news.getContent() == null || news.getContent().isBlank()) return List.of();
+        if (news.getTitle() == null || news.getTitle().isBlank()) return List.of();
 
-        String content = news.getContent();
-        // 3000자가 넘어가는 초장문 뉴스의 경우 임베딩 리소스 낭비를 막기 위해 상단부 3000자만 절삭하여 사용
-        if (content.length() > 3000) {
-            content = content.substring(0, 3000);
-        }
+        String title = cleanHtml(news.getTitle());
+        String description = cleanHtml(news.getDescription());
 
-        List<Sentence> sentences = sentenceSplitter.splitBySentence(content);
+        // 제목과 요약을 합쳐 단일 대표 청크
+        String chunkText = title + " - " + description;
 
-        List<Sentence> filteredNoise = sentences.stream()
-                .filter(s -> isNotNoise(s.text()))
-                .toList();
-        if (filteredNoise.isEmpty()) return List.of();
+        String uuid = UUID.nameUUIDFromBytes(
+                (news.getId() + AppConstants.HYPHEN + "0").getBytes(StandardCharsets.UTF_8)
+        ).toString();
 
-        List<String> chunks = newsChunker.chunk(filteredNoise);
+        Map<String, Object> metadata = new NewsMetadata(news, 0).toMap();
+        Document document = new Document(uuid, chunkText, metadata);
 
-        return IntStream.range(0, chunks.size())
-                .mapToObj(i -> {
-                    String uuid = UUID.nameUUIDFromBytes(
-                            (news.getId() + AppConstants.HYPHEN + i).getBytes(StandardCharsets.UTF_8)
-                    ).toString();
-                    Map<String, Object> metadata = new NewsMetadata(news, i).toMap();
-                    return new Document(uuid, chunks.get(i), metadata);
-                })
-                .toList();
+        return List.of(document);
     }
 
     /**
-     * 저작권 문구, 광고, 이메일 등 임베딩 품질을 떨어뜨리는 문장 여부 확인
+     * 네이버 API 검색 결과에 들어있는 <b> 등의 HTML 태그 및 &quot; 등 엔티티 문자열 제거 정제
      */
-    private boolean isNotNoise(String sentence) {
-        return !NOISE_EXACT_PATTERNS.contains(sentence)
-                && NOISE_START_PATTERNS.stream().noneMatch(sentence::startsWith)
-                && NOISE_CONTAIN_PATTERNS.stream().noneMatch(sentence::contains);
+    private String cleanHtml(String text) {
+        if (text == null) return "";
+        return text.replaceAll("<[^>]*>", "")
+                .replace("&quot;", "\"")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&amp;", "&")
+                .trim();
     }
 }
