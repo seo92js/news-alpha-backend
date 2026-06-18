@@ -22,10 +22,4 @@ public class AppConstants {
         public static final String ADMIN_DASHBOARD = "관리자 대시보드입니다.";
     }
 
-    public static final class SentenceDelimiter {
-        private SentenceDelimiter() {}
-        public static final char EXCLAMATION = '!';
-        public static final char QUESTION = '?';
-        public static final char PERIOD = '.';
-    }
 }

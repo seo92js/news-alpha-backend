@@ -5,6 +5,7 @@ import com.seo92js.news_alpha_backend.common.exception.ErrorCode;
 import com.seo92js.news_alpha_backend.domain.stock.dto.KrxStockItem;
 import com.seo92js.news_alpha_backend.domain.stock.dto.KrxStockResponse;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -17,7 +18,12 @@ public class KrxStockClient {
     private final KrxStockProperties properties;
 
     public KrxStockClient(KrxStockProperties properties) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setConnectTimeout(5000);
+        requestFactory.setReadTimeout(5000);
+
         this.restClient = RestClient.builder()
+                .requestFactory(requestFactory)
                 .baseUrl("https://apis.data.go.kr")
                 .build();
         this.properties = properties;

@@ -39,3 +39,5 @@ eventType이 애매하면 더 직접적인 원인을 선택해라.
 
 반드시 JSON 객체 하나만 반환해라. 설명 문장, 마크다운, 코드블록은 쓰지 마라.
 JSON 필드는 title, summary, eventType, sentiment, confidence, investorSummary 만 사용해라.
+- title은 15자 내외로 매우 직관적이고 함축적으로 작성해라.
+- summary 및 investorSummary는 불필요한 서술형 표현이나 중복 수식어를 제거하고 핵심 팩트와 투자자 관점만 각각 2문장 이내(150자 내외)로 명료하게 요약해라.

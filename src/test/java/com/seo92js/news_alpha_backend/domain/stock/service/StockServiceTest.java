@@ -4,8 +4,13 @@ import com.seo92js.news_alpha_backend.domain.signal.SignalEventType;
 import com.seo92js.news_alpha_backend.domain.signal.SignalSentiment;
 import com.seo92js.news_alpha_backend.domain.stock.Stock;
 import com.seo92js.news_alpha_backend.domain.stock.StockReport;
+import com.seo92js.news_alpha_backend.domain.ai.service.AiService;
+import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockLatestReportResponse;
+import com.seo92js.news_alpha_backend.domain.stock.dto.StockResponse;
+import com.seo92js.news_alpha_backend.domain.stock.dto.StockSaveRequest;
 import com.seo92js.news_alpha_backend.domain.stock.dto.StockSignalSummaryResponse;
+import com.seo92js.news_alpha_backend.domain.stock.exception.KeywordGenerationException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.StockNotFoundException;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
@@ -17,6 +22,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionCallback;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,8 +53,55 @@ class StockServiceTest {
     @Mock
     private StockReportSignalRepository stockReportSignalRepository;
 
+    @Mock
+    private AiService aiService;
+
+    @Mock
+    private TransactionTemplate transactionTemplate;
+
     @InjectMocks
     private StockService stockService;
+
+    @Test
+    void 종목_저장_시_LLM_키워드_추출에_성공하면_정상적으로_키워드와_함께_종목을_반환한다() {
+        StockSaveRequest request = new StockSaveRequest("TSLA", "테슬라", "NASDAQ");
+        Stock stock = Stock.of("TSLA", "테슬라", "NASDAQ");
+        ReflectionTestUtils.setField(stock, "id", 1L);
+
+        StockKeyword kw1 = StockKeyword.of(stock, "일론 머스크");
+        StockKeyword kw2 = StockKeyword.of(stock, "자율주행");
+
+        when(transactionTemplate.execute(any())).thenAnswer(invocation -> {
+            TransactionCallback<?> callback = invocation.getArgument(0);
+            return callback.doInTransaction(null);
+        });
+
+        when(stockRepository.existsByTickerAndMarket("TSLA", "NASDAQ")).thenReturn(false);
+        when(stockRepository.save(any(Stock.class))).thenReturn(stock);
+        when(aiService.generateKeywordsForStock(any(Stock.class))).thenReturn(List.of("일론 머스크", "자율주행"));
+        when(stockKeywordRepository.save(any(StockKeyword.class))).thenReturn(kw1).thenReturn(kw2);
+        when(stockKeywordRepository.findByStockId(1L)).thenReturn(List.of(kw1, kw2));
+
+        StockResponse response = stockService.save(request);
+
+        assertNotNull(response);
+        assertEquals("테슬라", response.name());
+        assertEquals("TSLA", response.ticker());
+        assertEquals(2, response.keywords().size());
+        assertEquals("일론 머스크", response.keywords().get(0).keyword());
+        assertEquals("자율주행", response.keywords().get(1).keyword());
+    }
+
+    @Test
+    void 종목_저장_시_LLM_키워드_추출에_실패하면_예외가_발생한다() {
+        StockSaveRequest request = new StockSaveRequest("TSLA", "테슬라", "NASDAQ");
+
+        when(stockRepository.existsByTickerAndMarket("TSLA", "NASDAQ")).thenReturn(false);
+        when(aiService.generateKeywordsForStock(any(Stock.class)))
+                .thenThrow(new KeywordGenerationException("테슬라", "LLM 호출 타임아웃"));
+
+        assertThrows(KeywordGenerationException.class, () -> stockService.save(request));
+    }
 
     @Test
     void 최신_종목_리포트_조회시_핵심_시그널을_함께_반환한다() {

@@ -39,13 +39,12 @@ dependencies {
 	// spring
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
-	implementation 'org.springframework.ai:spring-ai-starter-model-google-genai-embedding'
+	implementation 'org.springframework.ai:spring-ai-starter-model-openai'
 
 	// Querydsl
 	implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'

@@ -18,6 +18,7 @@ public enum ErrorCode {
 
     // API
     API_FETCH_FAILED("API_FETCH_FAILED", "외부 API 호출에 실패했습니다."),
+    KEYWORD_GENERATION_FAILED("KEYWORD_GENERATION_FAILED", "연관 키워드 생성에 실패했습니다."),
 
     // Common
     INVALID_INPUT("INVALID_INPUT", "입력값이 올바르지 않습니다."),

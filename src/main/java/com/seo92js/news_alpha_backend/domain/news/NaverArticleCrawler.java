@@ -12,6 +12,21 @@ import java.util.List;
 @RequiredArgsConstructor
 @Component
 public class NaverArticleCrawler {
+    /**
+     * 이 문자열로 시작하면 저작권/출처 문구로 보고 본문 수집 대상에서 제외
+     */
+    private static final List<String> NOISE_START_PATTERNS = List.of("◎", "ⓒ", "저작권자");
+
+    /**
+     * 문장 중간에 포함되면 기자 이메일, 재배포 금지 문구 등으로 보고 본문 수집 대상에서 제외
+     */
+    private static final List<String> NOISE_CONTAIN_PATTERNS = List.of("무단전재", "재배포 금지", "@");
+
+    /**
+     * 문장 전체가 정확히 일치하면 광고/시스템 문구로 보고 본문 수집 대상에서 제외
+     */
+    private static final List<String> NOISE_EXACT_PATTERNS = List.of("ADVERTISEMENT");
+
     private final NaverNewsProperties naverNewsProperties;
 
     /**
@@ -58,7 +73,9 @@ public class NaverArticleCrawler {
                 if (body != null) {
                     body.select(GARBAGE_SELECTORS).remove();
                     String text = body.text().trim();
-                    if (!text.isBlank()) return text;
+                    if (!text.isBlank()) {
+                        return cleanNoiseText(text);
+                    }
                 }
             }
             return null;
@@ -66,5 +83,30 @@ public class NaverArticleCrawler {
             // 크롤링 실패 시 null 처리
             return null;
         }
+    }
+
+    /**
+     * 기사 본문에서 기자 정보, 광고, 저작권 문구 등 텍스트 노이즈를 라인 단위로 필터링
+     */
+    private String cleanNoiseText(String rawText) {
+        if (rawText == null || rawText.isBlank()) return "";
+
+        String[] lines = rawText.split("[\\n.]");
+        StringBuilder sb = new StringBuilder();
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+
+            if (NOISE_EXACT_PATTERNS.contains(trimmed)
+                    || NOISE_START_PATTERNS.stream().anyMatch(trimmed::startsWith)
+                    || NOISE_CONTAIN_PATTERNS.stream().anyMatch(trimmed::contains)) {
+                continue;
+            }
+
+            sb.append(trimmed).append(". ");
+        }
+
+        return sb.toString().trim();
     }
 }

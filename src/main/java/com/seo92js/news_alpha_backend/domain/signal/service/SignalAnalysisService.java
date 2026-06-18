@@ -54,11 +54,10 @@ public class SignalAnalysisService {
 
     private String buildPrompt(Stock stock, String keyword, int clusterSize, long burstCount, List<SignalAnalysisNews> news) {
         String newsBlock = news.stream()
-                .map(item -> "- 제목: %s | 발행시각: %s | URL: %s | 내용: %s"
+                .map(item -> "- 제목: %s | 발행시각: %s | 내용: %s"
                         .formatted(
                                 item.title(),
                                 item.publishedAt().format(DATE_TIME_FORMATTER),
-                                item.url(),
                                 item.preview()
                         ))
                 .collect(Collectors.joining("\n"));
