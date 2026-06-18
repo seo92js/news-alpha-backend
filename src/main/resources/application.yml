@@ -25,16 +25,17 @@ spring:
       pgvector:
         index-type: none
         distance-type: cosine_distance
-        dimensions: 3072
+        dimensions: 1536
         table-name: news_vector
         schema-name: public
         initialize-schema: true
-    google:
-      genai:
-        embedding:
-          text:
-            options:
-              model: models/gemini-embedding-001
+    openai:
+      chat:
+        options:
+          model: gpt-4o-mini
+      embedding:
+        options:
+          model: text-embedding-3-small
 
 naver:
   news:

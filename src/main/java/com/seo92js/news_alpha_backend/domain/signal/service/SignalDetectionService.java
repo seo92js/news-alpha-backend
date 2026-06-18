@@ -47,7 +47,7 @@ public class SignalDetectionService {
      * 벡터 검색 결과를 같은 이슈 군집으로 볼 최소 유사도
      * 높일수록 정밀도는 올라가고, 낮출수록 더 넓은 관련 뉴스를 포함
      */
-    private static final double SIMILARITY_THRESHOLD = 0.82d;
+    private static final double SIMILARITY_THRESHOLD = 0.70d;
 
     /**
      * 시그널로 인정하기 위한 최소 뉴스 건수

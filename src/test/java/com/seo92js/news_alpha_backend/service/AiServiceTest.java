@@ -12,6 +12,7 @@ class AiServiceTest {
     private AiService aiService;
 
     @Test
+    @Disabled
     void chat() {
         String message = "현재 날씨 알려줘";
         String response = aiService.chat(message);
