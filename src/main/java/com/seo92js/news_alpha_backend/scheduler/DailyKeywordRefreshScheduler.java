@@ -18,7 +18,7 @@ import java.util.List;
 @Profile("prod")
 @RequiredArgsConstructor
 @Slf4j
-public class WeeklyKeywordRefreshScheduler {
+public class DailyKeywordRefreshScheduler {
 
     private final StockRepository stockRepository;
     private final StockKeywordRepository stockKeywordRepository;
@@ -26,11 +26,11 @@ public class WeeklyKeywordRefreshScheduler {
     private final TransactionTemplate transactionTemplate;
 
     /**
-     * 모든 종목의 연관 키워드를 최신화
+     * 매일 새벽 6시 모든 종목의 연관 키워드를 최신화
      */
-    @Scheduled(cron = "0 0 23 * * SUN", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 6 * * *", zone = "Asia/Seoul")
     public void refreshAllStockKeywords() {
-        log.info("주간 종목 연관 키워드 자동 갱신 스케줄러 시작");
+        log.info("데일리 종목 연관 키워드 자동 갱신 스케줄러 시작 (새벽 6시 장전 리프레시)");
         List<Stock> stocks = stockRepository.findAll();
 
         if (stocks.isEmpty()) {
@@ -48,9 +48,9 @@ public class WeeklyKeywordRefreshScheduler {
                     }
                 });
 
-                log.info("주간 키워드 갱신 완료. stock={}, keywords={}", stock.getName(), newKeywords);
+                log.info("데일리 키워드 갱신 완료. stock={}, keywords={}", stock.getName(), newKeywords);
             } catch (Exception e) {
-                log.warn("종목 키워드 주간 갱신 실패. stock={}", stock.getName(), e);
+                log.warn("종목 키워드 데일리 갱신 실패. stock={}", stock.getName(), e);
             }
         }
     }

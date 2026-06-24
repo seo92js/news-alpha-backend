@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -93,12 +94,16 @@ public class StockReportService {
             return;
         }
 
+        // eventType 우선순위 기준으로 정렬하여 중요 시그널이 프롬프트 상단(최우선)에 가도록 구성
+        List<Signal> sortedSignals = new ArrayList<>(signals);
+        sortedSignals.sort(Comparator.comparingInt(this::getSignalTypePriority));
+
         try {
             LocalDateTime generatedAt = LocalDateTime.now();
             LocalDate reportDate = generatedAt.toLocalDate();
 
             // DB 커넥션 미점유
-            String report = aiService.chat(buildPrompt(stock, reportDate, signals));
+            String report = aiService.chat(buildPrompt(stock, reportDate, sortedSignals));
 
             // 통신 성공 시에만
             transactionTemplate.executeWithoutResult(status -> {
@@ -205,5 +210,20 @@ public class StockReportService {
                 "reportDate", reportDate.toString(),
                 "signalBlock", signalBlock
         ));
+    }
+
+    private int getSignalTypePriority(Signal signal) {
+        if (signal.getEventType() == null) {
+            return 7;
+        }
+        return switch (signal.getEventType()) {
+            case EARNINGS -> 1;
+            case PRODUCT -> 2;
+            case REGULATION -> 3;
+            case MANAGEMENT -> 4;
+            case LEGAL -> 5;
+            case MARKET -> 6;
+            default -> 7;
+        };
     }
 }
