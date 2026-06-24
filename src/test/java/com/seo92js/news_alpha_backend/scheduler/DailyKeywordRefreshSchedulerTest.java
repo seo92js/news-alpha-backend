@@ -21,7 +21,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class WeeklyKeywordRefreshSchedulerTest {
+class DailyKeywordRefreshSchedulerTest {
 
     @Mock
     private StockRepository stockRepository;
@@ -36,10 +36,10 @@ class WeeklyKeywordRefreshSchedulerTest {
     private TransactionTemplate transactionTemplate;
 
     @InjectMocks
-    private WeeklyKeywordRefreshScheduler weeklyKeywordRefreshScheduler;
+    private DailyKeywordRefreshScheduler dailyKeywordRefreshScheduler;
 
     @Test
-    void 매주_일요일_스케줄러가_돌면_등록된_모든_종목의_기존_키워드를_지우고_새_키워드로_교체한다() {
+    void 매일_새벽_스케줄러가_돌면_등록된_모든_종목의_기존_키워드를_지우고_새_키워드로_교체한다() {
         Stock stock = Stock.of("NVDA", "엔비디아", "NASDAQ");
         ReflectionTestUtils.setField(stock, "id", 1L);
 
@@ -52,7 +52,7 @@ class WeeklyKeywordRefreshSchedulerTest {
         when(stockRepository.findAll()).thenReturn(List.of(stock));
         when(aiService.generateKeywordsForStock(stock)).thenReturn(List.of("AI 반도체", "젠슨 황"));
 
-        weeklyKeywordRefreshScheduler.refreshAllStockKeywords();
+        dailyKeywordRefreshScheduler.refreshAllStockKeywords();
 
         verify(stockKeywordRepository).deleteByStockId(1L);
         verify(stockKeywordRepository, times(2)).save(any(StockKeyword.class));
@@ -75,7 +75,7 @@ class WeeklyKeywordRefreshSchedulerTest {
         when(aiService.generateKeywordsForStock(stock1)).thenThrow(new RuntimeException("LLM 에러"));
         when(aiService.generateKeywordsForStock(stock2)).thenReturn(List.of("일론 머스크", "자율주행"));
 
-        weeklyKeywordRefreshScheduler.refreshAllStockKeywords();
+        dailyKeywordRefreshScheduler.refreshAllStockKeywords();
 
         verify(stockKeywordRepository, never()).deleteByStockId(1L);
 

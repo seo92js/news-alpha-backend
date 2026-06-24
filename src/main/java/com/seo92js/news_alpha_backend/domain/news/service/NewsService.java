@@ -92,6 +92,26 @@ public class NewsService {
     }
 
     /**
+     * 키워드로 뉴스 최근 30건을 조회하여 가볍게 정제된 제목 목록만 반환
+     */
+    public List<String> fetchRecentNewsTitles(String keyword) {
+        try {
+            NaverNewsResponse response = naverNewsClient.fetch(keyword, clientId, clientSecret);
+            if (response == null || response.items() == null || response.items().isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            return response.items().stream()
+                    .filter(item -> item.title() != null && !item.title().isBlank())
+                    .limit(30)
+                    .map(item -> cleanText(item.title()))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    /**
      * 지원 URL이면서 originalLink가 있는 뉴스만 API 응답 순서대로 중복 제거
      */
     private List<NaverNewsResponse.Item> filterSupportedItems(List<NaverNewsResponse.Item> items) {
