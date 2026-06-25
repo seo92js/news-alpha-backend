@@ -8,7 +8,6 @@ import com.seo92js.news_alpha_backend.domain.stock.StockKeyword;
 import com.seo92js.news_alpha_backend.domain.stock.StockReport;
 import com.seo92js.news_alpha_backend.domain.stock.dto.*;
 import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockException;
-import com.seo92js.news_alpha_backend.domain.stock.exception.DuplicateStockKeywordException;
 import com.seo92js.news_alpha_backend.domain.stock.exception.StockNotFoundException;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockKeywordRepository;
 import com.seo92js.news_alpha_backend.domain.stock.repository.StockReportRepository;
@@ -72,22 +71,6 @@ public class StockService {
         return stockRepository.findAll().stream()
                 .map(stock -> StockResponse.from(stock, findKeywordResponses(stock.getId())))
                 .toList();
-    }
-
-    /**
-     * 특정 종목에 뉴스 수집용 키워드 추가
-     */
-    @Transactional
-    public StockKeywordResponse addKeyword(Long stockId, StockKeywordSaveRequest request) {
-        Stock stock = stockRepository.findById(stockId)
-                .orElseThrow(() -> new StockNotFoundException(stockId));
-
-        if (stockKeywordRepository.existsByStockIdAndKeyword(stockId, request.keyword())) {
-            throw new DuplicateStockKeywordException(stockId, request.keyword());
-        }
-
-        StockKeyword stockKeyword = stockKeywordRepository.save(StockKeyword.of(stock, request.keyword()));
-        return StockKeywordResponse.from(stockKeyword);
     }
 
     /**
@@ -158,11 +141,4 @@ public class StockService {
         stockRepository.deleteById(stockId);
     }
 
-    /**
-     * 키워드 삭제
-     */
-    @Transactional
-    public void deleteKeyword(Long keywordId) {
-        stockKeywordRepository.deleteById(keywordId);
-    }
 }
