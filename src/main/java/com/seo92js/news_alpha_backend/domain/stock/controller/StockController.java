@@ -26,14 +26,6 @@ public class StockController {
         return stockService.findAll();
     }
 
-    @PostMapping("/{stockId}/keywords")
-    public StockKeywordResponse addKeyword(
-            @PathVariable Long stockId,
-            @RequestBody StockKeywordSaveRequest request
-    ) {
-        return stockService.addKeyword(stockId, request);
-    }
-
     @GetMapping("/{stockId}/keywords")
     public List<StockKeywordResponse> findKeywords(@PathVariable Long stockId) {
         return stockService.findKeywords(stockId);
@@ -57,10 +49,5 @@ public class StockController {
     @DeleteMapping("/{stockId}")
     public void delete(@PathVariable Long stockId) {
         stockService.delete(stockId);
-    }
-
-    @DeleteMapping("/{stockId}/keywords/{keywordId}")
-    public void deleteKeyword(@PathVariable Long stockId, @PathVariable Long keywordId) {
-        stockService.deleteKeyword(keywordId);
     }
 }
